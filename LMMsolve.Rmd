@@ -1,0 +1,105 @@
+---
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir ="docs") })
+
+title: "Method of Moments and MM Algorithm"
+author: "Yida Wu"
+date: '`r format(Sys.Date())`'
+output:
+  prettydoc::html_pretty:
+    theme: architect
+    highlight: github
+    toc: yes
+---
+
+```{r setup,echo=FALSE,warning=FALSE,message=FALSE}
+knitr::opts_chunk$set(
+	echo = FALSE,
+	fig.align = "center",
+	fig.show = "asis",
+	message = FALSE,
+	warning = FALSE,
+	out.width = "60%"
+)
+source("R/LMM_MoM.R")
+```
+
+\def\bfX {\mathbf{X}}
+\def\bfV {\mathbf{V}}
+\def\bfy {\mathbf{y}}
+\def\bfZ {\mathbf{Z}}
+\def\bfVy {\mathbf{Vy}}
+\def\bfK {\mathbf{K}}
+
+> Linear mixed models (LMMs) have emerged as a key tool for heritability estimation where the parameters of the LMMs, i.e. the variance components, are related to the heritability attributable to the SNPs analyzed.
+
+# Linear Mixed Model
+
+The linear mixed model builds upon a linear relationship from $\bfy$ to $\bfX$ and $\bfZ$ by
+
+\begin{equation}
+  \tag{1}
+  \bfy=\bfZ \boldsymbol{\omega}+\bfX \boldsymbol{\beta}+\mathbf{e}
+\end{equation}
+
+- $\bfy \in \mathbb{R}^n$, $\bfy$ is centered so that $\sum_ny_n=0$;
+- $\bfX \in \mathbb{R}^{n\times p}$, each column of $\bfX$ is centered and scaled so that $\sum_nx_{n,p}=0$ and $\sum_nx_{n,p}^2=\frac{1}{p}$;
+- $\bfZ$ is a $n \times c$ matrix of covariates;
+- $\boldsymbol{\omega} \in \mathbb{R}^p$ is the vector of fixed effects; 
+- $\boldsymbol{\beta}$ is the vector of random effects with $\boldsymbol{\beta}\sim \mathcal{N}\left(0, \sigma_\beta^2 \mathbf{I}_p\right)$;
+- $\mathbf{e} \sim \mathcal{N}\left(0, \sigma_e^2 \mathbf{I}_n\right)$ is the independent noise term.
+
+The main target is to estimate the set of unknown parameters $\boldsymbol{\Theta}=\left\{\boldsymbol{\omega}, \sigma_\beta^2, \sigma_e^2\right\}$. We will derive and implement two methods (MoM and MM) in this project.
+
+# Method-of-Moments
+
+The **principle** of the Method-of-Moments (MoM) is to obtain estimates of the model parameters such that the theoretical moments match the sample moments. 
+
+First, Equation (1) is transformed by multiplying by the projection matrix $\bfV=\mathbf{I}_n-\bfZ\left(\bfZ^T \bfZ\right)^{-1} \bfZ^T$ (note that $\bfV^{\mathrm{T}}=\bfV$ and $\bfV^{\mathrm{T}}\bfV=\bfV$) :
+
+\begin{equation}
+  \tag{2}
+  \bfVy=\mathbf{VX} \boldsymbol{\beta}+\mathbf{Ve}
+\end{equation}
+
+From Equation (2), the first theoretical moment and the second theoretical moment can be derived. $\mathbb{E}\left[\bfVy\right]=\mathbf{0}$ while the population variance of the vector $\bfVy$ is:
+\begin{align}
+  \tag{3}
+  \operatorname{Var}\left(\bfVy\right) &= \mathbb{E}\left[\bfVy\bfy^\mathrm{T}\bfV\right] - \mathbb{E}\left[\bfVy\right] \mathbb{E}\left[\bfVy\right]^{\mathrm{T}}\\ &= \sigma_{\beta}^2\mathbf{VKV} + \sigma_{e}^{2}\bfV
+\end{align}
+Here $\bfK=\bfX\bfX^\mathrm{T}$.
+
+Next, the MoM estimator is obtained by solving the following ordinary least squares (OLS) problem:
+
+\begin{align}
+  \tag{4}
+  \operatorname{argmin}_{\sigma_\beta^2, \sigma_e^2}\left\|(\bfVy)(\bfVy)^\mathrm{T}-\left(\sigma_\beta^2 \bfV \bfK \bfV+\sigma_e^2 \bfV\right)\right\|_F^2
+\end{align}
+
+
+## Input the data
+```{r cache = TRUE}
+mydata = read.table(file = "data/XYZ_MoM.txt",header = T)
+y = mydata$y
+Z = mydata[,2:31]
+X = mydata[,32:ncol(mydata)]
+```
+
+## MoM
+```{r cache = TRUE}
+result1 = LMM_MoM(y,X,Z,ifintercept=F,ifK2=T,B=100,seed=2023)
+result1
+result2 = LMM_MoM(y,X,Z,ifintercept=F,ifK2=F,B=100,seed=2023)
+result2
+```
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
