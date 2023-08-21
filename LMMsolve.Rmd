@@ -29,8 +29,11 @@ source("R/LMM_MoM.R")
 \def\bfy {\mathbf{y}}
 \def\bfZ {\mathbf{Z}}
 \def\bfVy {\mathbf{Vy}}
+\def\bfVK {\mathbf{VK}}
+\def\bfVKV {\mathbf{VKV}}
 \def\bfK {\mathbf{K}}
-
+\def\bfVKVK {\mathbf{VKVK}}
+\def\bftheta {\boldsymbol{\theta}}
 > Linear mixed models (LMMs) have emerged as a key tool for heritability estimation where the parameters of the LMMs, i.e. the variance components, are related to the heritability attributable to the SNPs analyzed.
 
 # Linear Mixed Model
@@ -49,23 +52,24 @@ The linear mixed model builds upon a linear relationship from $\bfy$ to $\bfX$ a
 - $\boldsymbol{\beta}$ is the vector of random effects with $\boldsymbol{\beta}\sim \mathcal{N}\left(0, \sigma_\beta^2 \mathbf{I}_p\right)$;
 - $\mathbf{e} \sim \mathcal{N}\left(0, \sigma_e^2 \mathbf{I}_n\right)$ is the independent noise term.
 
-The main target is to estimate the set of unknown parameters $\boldsymbol{\Theta}=\left\{\boldsymbol{\omega}, \sigma_\beta^2, \sigma_e^2\right\}$. We will derive and implement two methods (MoM and MM) in this project.
+The main target is to estimate the set of unknown parameters $\bftheta=\left\{\boldsymbol{\omega}, \sigma_\beta^2, \sigma_e^2\right\}$. We will derive and implement two methods (MoM and MM) in this project.
 
 # Method-of-Moments
 
+## Derivation
 The **principle** of the Method-of-Moments (MoM) is to obtain estimates of the model parameters such that the theoretical moments match the sample moments. 
 
 First, Equation (1) is transformed by multiplying by the projection matrix $\bfV=\mathbf{I}_n-\bfZ\left(\bfZ^T \bfZ\right)^{-1} \bfZ^T$ (note that $\bfV^{\mathrm{T}}=\bfV$ and $\bfV^{\mathrm{T}}\bfV=\bfV$) :
 
 \begin{equation}
   \tag{2}
-  \bfVy=\mathbf{VX} \boldsymbol{\beta}+\mathbf{Ve}
+  \bfVy=\mathbf{VX} \boldsymbol{\beta}+\mathbf{Ve}.
 \end{equation}
 
-From Equation (2), the first theoretical moment and the second theoretical moment can be derived. $\mathbb{E}\left[\bfVy\right]=\mathbf{0}$ while the population variance of the vector $\bfVy$ is:
+From Equation (2), the first theoretical moment and the second theoretical moment can be derived. $\mathbb{E}\left[\bfVy\right]=\mathbf{0}$ while the population covariance of the vector $\bfVy$ is:
 \begin{align}
   \tag{3}
-  \operatorname{Var}\left(\bfVy\right) &= \mathbb{E}\left[\bfVy\bfy^\mathrm{T}\bfV\right] - \mathbb{E}\left[\bfVy\right] \mathbb{E}\left[\bfVy\right]^{\mathrm{T}}\\ &= \sigma_{\beta}^2\mathbf{VKV} + \sigma_{e}^{2}\bfV
+  \operatorname{Cov}\left(\bfVy\right) &= \mathbb{E}\left[\bfVy\bfy^\mathrm{T}\bfV\right] - \mathbb{E}\left[\bfVy\right] \mathbb{E}\left[\bfVy\right]^{\mathrm{T}}\\ &= \sigma_{\beta}^2\mathbf{VKV} + \sigma_{e}^{2}\bfV,
 \end{align}
 Here $\bfK=\bfX\bfX^\mathrm{T}$.
 
@@ -73,8 +77,47 @@ Next, the MoM estimator is obtained by solving the following ordinary least squa
 
 \begin{align}
   \tag{4}
-  \operatorname{argmin}_{\sigma_\beta^2, \sigma_e^2}\left\|(\bfVy)(\bfVy)^\mathrm{T}-\left(\sigma_\beta^2 \bfV \bfK \bfV+\sigma_e^2 \bfV\right)\right\|_F^2
+  \left(\widehat{\sigma_{\beta}^2}, \widehat{\sigma_e^2}\right)=\operatorname{argmin}_{\sigma_\beta^2, \sigma_e^2}\left\|(\bfVy)(\bfVy)^\mathrm{T}-\left(\sigma_\beta^2 \bfV \bfK \bfV+\sigma_e^2 \bfV\right)\right\|_F^2,
 \end{align}
+
+Due to the fact that $\|\mathbf{A}\|_F=\sqrt{\operatorname{tr}\left(\mathbf{A} \mathbf{A}^T\right)}$, the OLS problem can be re-written as:
+
+\begin{align}
+  \tag{5}
+  \left(\widehat{\sigma_{\beta}^2}, \widehat{\sigma_e^2}\right)= \operatorname{argmin}_{\sigma_\beta^2, \sigma_e^2} \operatorname{tr}\left[\left((\bfVy)(\bfVy)^\mathrm{T}-\left(\sigma_\beta^2 \bfVKV+\sigma_e^2 \bfV\right)\right)\left((\bfVy)(\bfVy)^\mathrm{T}-\left(\sigma_\beta^2 \bfVKV+\sigma_e^2 \bfV\right)\right)^\mathrm{T}\right].
+\end{align}
+
+Then, the MoM estimator satisfies the normal equations:
+
+\begin{align}
+  \tag{6}
+  \mathbf{A}\bftheta=\mathbf{q},
+\end{align}
+
+where $$\mathbf{A}=\left[\begin{array}{ll}
+\operatorname{tr}\left(\bfVKVK \right) & \operatorname{tr}\left(\bfVK\right) \\
+\operatorname{tr}\left(\bfVK \right) & n-c
+\end{array}\right],$$
+
+$$\bftheta=\left[\begin{array}{l}
+\widehat{\sigma_{\beta}^2} \\
+\widehat{\sigma_e^2}
+\end{array}\right],$$
+
+$$\mathbf{q} =\left[\begin{array}{l}
+\bfy^{\mathrm{T}} \bfVKV \bfy \\
+\bfy^{\mathrm{T}} \bfVy
+\end{array}\right].$$
+
+Hence, the MoM estimates of $\bftheta$ is $\widehat{\bftheta}=\mathbf{A}^{-1}\mathbf{q}$.
+
+## Modification 1: Sandwich Estimator
+
+
+## Modification 2: Delta Method 
+
+
+## Application
 
 
 ## Input the data
@@ -89,6 +132,9 @@ X = mydata[,32:ncol(mydata)]
 ```{r cache = TRUE}
 result1 = LMM_MoM(y,X,Z,ifintercept=F,ifK2=T,B=100,seed=2023)
 result1
+# sigma2 = c(result1$sb2,result1$se2)
+# var_sigma2 = result1$cov_sigma2
+# solve(var_sigma2)^(1/2)%*%sigma2
 result2 = LMM_MoM(y,X,Z,ifintercept=F,ifK2=F,B=100,seed=2023)
 result2
 ```

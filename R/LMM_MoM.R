@@ -9,7 +9,6 @@
 ##estimator: a list:sb2,se2,omega
 
 LMM_MoM = function(y,X,Z,ifintercept=F,ifK2=T,B=100,seed=2023){
-  ini_time = Sys.time()
   X = as.matrix(X)
   Z = as.matrix(Z)
   
@@ -48,22 +47,40 @@ LMM_MoM = function(y,X,Z,ifintercept=F,ifK2=T,B=100,seed=2023){
   # solve the normal equations
   VyK = t(Vy)%*%K%*%Vy
   Vyy = t(Vy)%*%y
-  coeffmat = matrix(c(trVK2,trVK,trVK,n-q),2,2)
-  # print(coeffmat)
-  sigma2vec = solve(coeffmat,c(VyK,Vyy))
-  sigma2_beta = sigma2vec[1]
-  sigma2_e = sigma2vec[2]
+  A = matrix(c(trVK2,trVK,trVK,n-q),2,2)
+  # print(A)
+  rc = c(VyK,Vyy)
+  A_inv = solve(A)
+  sigma2 = A_inv%*%rc
+  
+  sigma2_beta = sigma2[1]
+  sigma2_e = sigma2[2]
   
   # solve w, use weighted least square
   U = sigma2_beta*K + sigma2_e*diag(n)
   U_inv = solve(U)
   omega = solve(t(Z)%*%U_inv%*%Z)%*%t(Z)%*%U_inv%*%y
   
+  # compute the variance matrix of sigma2 using sandwich estimator
+  
+  cov_B = matrix(0,2,2)
+  VSig = sigma2_beta*VK + sigma2_e*V
+  VKVSig = VK%*%VSig
+  
+  cov_B[1,1] = 2*sum(VKVSig^2)
+  cov_B[2,2] = 2*sum(VSig^2)
+  cov_B[1,2] = 2*sum(diag(VKVSig%*%VSig))
+  cov_B[2,1] = cov_B[1,2]
+  
+  cov_sigma2 = A_inv%*%cov_B%*%A_inv
+  
+  # hypothesis test
+  
   result = list()
   result[["sb2"]] = sigma2_beta
   result[["se2"]] = sigma2_e
   result[["omega"]] = omega
-  result[["usetime"]] = Sys.time()-ini_time
+  result[["cov_sigma2"]] = cov_sigma2
   return(result)
 }
 
