@@ -74,13 +74,22 @@ LMM_MoM = function(y,X,Z,ifintercept=F,ifK2=T,B=100,seed=2023){
   
   cov_sigma2 = A_inv%*%cov_B%*%A_inv
   
-  # hypothesis test
+  # compute the variance matrix of h2 using delta method
+  
+  sigma2_total = sum(sigma2)
+  h2 = sigma2_beta/sigma2_total
+  
+  dh2 = c(sigma2_e/(sigma2_total^2),-sigma2_beta/(sigma2_total^2))
+  
+  cov_h2 = t(dh2)%*%cov_sigma2%*%dh2
   
   result = list()
   result[["sb2"]] = sigma2_beta
   result[["se2"]] = sigma2_e
   result[["omega"]] = omega
   result[["cov_sigma2"]] = cov_sigma2
+  result[["h2"]] = h2
+  result[["cov_h2"]] = cov_h2
   return(result)
 }
 

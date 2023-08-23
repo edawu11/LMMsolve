@@ -22,18 +22,33 @@ knitr::opts_chunk$set(
 	out.width = "60%"
 )
 source("R/LMM_MoM.R")
+source("R/Atest.R")
 ```
 
 \def\bfX {\mathbf{X}}
 \def\bfV {\mathbf{V}}
 \def\bfy {\mathbf{y}}
 \def\bfZ {\mathbf{Z}}
+\def\bfomega {\boldsymbol{\omega}}
+\def\rmT {\mathrm{T}}
+\def\Cov {\operatorname{Cov}}
 \def\bfVy {\mathbf{Vy}}
 \def\bfVK {\mathbf{VK}}
 \def\bfVKV {\mathbf{VKV}}
 \def\bfK {\mathbf{K}}
 \def\bfVKVK {\mathbf{VKVK}}
 \def\bftheta {\boldsymbol{\theta}}
+\def\hatbftheta {\hat{\boldsymbol{\theta}}}
+\def\bfA {\mathbf{A}}
+\def\bfb {\mathbf{b}}
+\def\Var {\operatorname{Var}}
+\def\tr {\operatorname{tr}}
+\def\bfSig {\mathbf{\Sigma}}
+\def\sigbeta {\sigma_\beta^2}
+\def\sige {\sigma_e^2}
+\def\hatsigbeta {\hat{\sigma_\beta^2}}
+\def\hatsige {\hat{\sigma_e^2}}
+
 > Linear mixed models (LMMs) have emerged as a key tool for heritability estimation where the parameters of the LMMs, i.e. the variance components, are related to the heritability attributable to the SNPs analyzed.
 
 # Linear Mixed Model
@@ -42,79 +57,156 @@ The linear mixed model builds upon a linear relationship from $\bfy$ to $\bfX$ a
 
 \begin{equation}
   \tag{1}
-  \bfy=\bfZ \boldsymbol{\omega}+\bfX \boldsymbol{\beta}+\mathbf{e}
+  \bfy=\bfZ \bfomega+\bfX \boldsymbol{\beta}+\mathbf{e}.
 \end{equation}
 
 - $\bfy \in \mathbb{R}^n$, $\bfy$ is centered so that $\sum_ny_n=0$;
 - $\bfX \in \mathbb{R}^{n\times p}$, each column of $\bfX$ is centered and scaled so that $\sum_nx_{n,p}=0$ and $\sum_nx_{n,p}^2=\frac{1}{p}$;
 - $\bfZ$ is a $n \times c$ matrix of covariates;
-- $\boldsymbol{\omega} \in \mathbb{R}^p$ is the vector of fixed effects; 
-- $\boldsymbol{\beta}$ is the vector of random effects with $\boldsymbol{\beta}\sim \mathcal{N}\left(0, \sigma_\beta^2 \mathbf{I}_p\right)$;
-- $\mathbf{e} \sim \mathcal{N}\left(0, \sigma_e^2 \mathbf{I}_n\right)$ is the independent noise term.
+- $\bfomega \in \mathbb{R}^p$ is the vector of fixed effects; 
+- $\boldsymbol{\beta}$ is the vector of random effects with $\boldsymbol{\beta}\sim \mathcal{N}\left(0, \sigbeta \mathbf{I}_p\right)$;
+- $\mathbf{e} \sim \mathcal{N}\left(0, \sige \mathbf{I}_n\right)$ is the independent noise term.
 
-The main target is to estimate the set of unknown parameters $\bftheta=\left\{\boldsymbol{\omega}, \sigma_\beta^2, \sigma_e^2\right\}$. We will derive and implement two methods (MoM and MM) in this project.
+Note that the linear mixed model (1) can be re-written as:
+
+\begin{align}
+\tag{2}
+\bfy \sim \mathcal{N}\left(\bfZ\bfomega,\bfSig\right),
+\end{align}
+
+where $\bfSig = \sigbeta \bfK+ \sige \mathbf{I}_n$ and $\bfK=\bfX\bfX^\rmT$.
+The main target is to estimate the set of unknown parameters $\mathbf{\Theta}=\left\{\bfomega, \sigbeta, \sige\right\}$. We will derive and implement two methods (MoM and MM) in this project.
 
 # Method-of-Moments
 
 ## Derivation
 The **principle** of the Method-of-Moments (MoM) is to obtain estimates of the model parameters such that the theoretical moments match the sample moments. 
 
-First, Equation (1) is transformed by multiplying by the projection matrix $\bfV=\mathbf{I}_n-\bfZ\left(\bfZ^T \bfZ\right)^{-1} \bfZ^T$ (note that $\bfV^{\mathrm{T}}=\bfV$ and $\bfV^{\mathrm{T}}\bfV=\bfV$) :
+First, Equation (1) is transformed by multiplying by the projection matrix $\bfV=\mathbf{I}_n-\bfZ\left(\bfZ^T \bfZ\right)^{-1} \bfZ^T$ (Note that $\bfV^{\rmT}=\bfV$ and $\bfV^{\rmT}\bfV=\bfV$) :
 
 \begin{equation}
-  \tag{2}
+  \tag{3}
   \bfVy=\mathbf{VX} \boldsymbol{\beta}+\mathbf{Ve}.
 \end{equation}
 
 From Equation (2), the first theoretical moment and the second theoretical moment can be derived. $\mathbb{E}\left[\bfVy\right]=\mathbf{0}$ while the population covariance of the vector $\bfVy$ is:
 \begin{align}
-  \tag{3}
-  \operatorname{Cov}\left(\bfVy\right) &= \mathbb{E}\left[\bfVy\bfy^\mathrm{T}\bfV\right] - \mathbb{E}\left[\bfVy\right] \mathbb{E}\left[\bfVy\right]^{\mathrm{T}}\\ &= \sigma_{\beta}^2\mathbf{VKV} + \sigma_{e}^{2}\bfV,
+  \tag{4}
+  \Cov\left(\bfVy\right) &= \mathbb{E}\left[\bfVy\bfy^\rmT\bfV\right] - \mathbb{E}\left[\bfVy\right] \mathbb{E}\left[\bfVy\right]^{\rmT}\\ &= \sigbeta \mathbf{VKV} + \sige \bfV.
 \end{align}
-Here $\bfK=\bfX\bfX^\mathrm{T}$.
+
 
 Next, the MoM estimator is obtained by solving the following ordinary least squares (OLS) problem:
 
 \begin{align}
-  \tag{4}
-  \left(\widehat{\sigma_{\beta}^2}, \widehat{\sigma_e^2}\right)=\operatorname{argmin}_{\sigma_\beta^2, \sigma_e^2}\left\|(\bfVy)(\bfVy)^\mathrm{T}-\left(\sigma_\beta^2 \bfV \bfK \bfV+\sigma_e^2 \bfV\right)\right\|_F^2,
+  \tag{5}
+  \left(\hatsigbeta, \hatsige\right) = \operatorname{argmin}_{\sigbeta, \sige} \left\|(\bfVy)(\bfVy)^\rmT-\left(\sigbeta \bfV \bfK \bfV+\sige \bfV\right)\right\|_F^2,
 \end{align}
 
-Due to the fact that $\|\mathbf{A}\|_F=\sqrt{\operatorname{tr}\left(\mathbf{A} \mathbf{A}^T\right)}$, the OLS problem can be re-written as:
+Due to the fact that $\|\bfA\|_F=\sqrt{\tr\left(\bfA \bfA^T\right)}$, the OLS problem can be re-written as:
 
 \begin{align}
-  \tag{5}
-  \left(\widehat{\sigma_{\beta}^2}, \widehat{\sigma_e^2}\right)= \operatorname{argmin}_{\sigma_\beta^2, \sigma_e^2} \operatorname{tr}\left[\left((\bfVy)(\bfVy)^\mathrm{T}-\left(\sigma_\beta^2 \bfVKV+\sigma_e^2 \bfV\right)\right)\left((\bfVy)(\bfVy)^\mathrm{T}-\left(\sigma_\beta^2 \bfVKV+\sigma_e^2 \bfV\right)\right)^\mathrm{T}\right].
+  \tag{6}
+  \left(\hatsigbeta, \hatsige\right)= \operatorname{argmin}_{\sigbeta, \sige} \tr\left[\left((\bfVy)(\bfVy)^\rmT-\left(\sigbeta \bfVKV+\sige \bfV\right)\right)\left((\bfVy)(\bfVy)^\rmT-\left(\sigbeta \bfVKV+\sige \bfV\right)\right)^\rmT\right].
 \end{align}
 
 Then, the MoM estimator satisfies the normal equations:
 
 \begin{align}
-  \tag{6}
-  \mathbf{A}\bftheta=\mathbf{q},
+  \tag{7}
+  \bfA\hatbftheta =\bfb,
 \end{align}
 
-where $$\mathbf{A}=\left[\begin{array}{ll}
-\operatorname{tr}\left(\bfVKVK \right) & \operatorname{tr}\left(\bfVK\right) \\
-\operatorname{tr}\left(\bfVK \right) & n-c
+where $$\bfA=\left[\begin{array}{ll}
+\tr\left(\bfVKVK \right) & \tr\left(\bfVK\right) \\
+\tr\left(\bfVK \right) & n-c
 \end{array}\right],$$
 
-$$\bftheta=\left[\begin{array}{l}
-\widehat{\sigma_{\beta}^2} \\
-\widehat{\sigma_e^2}
+$$\hatbftheta =\left[\begin{array}{l}
+\hatsigbeta \\
+\hatsige
 \end{array}\right],$$
 
-$$\mathbf{q} =\left[\begin{array}{l}
-\bfy^{\mathrm{T}} \bfVKV \bfy \\
-\bfy^{\mathrm{T}} \bfVy
+$$\bfb =\left[\begin{array}{l}
+\bfy^{\rmT} \bfVKV \bfy \\
+\bfy^{\rmT} \bfVy
 \end{array}\right].$$
 
-Hence, the MoM estimates of $\bftheta$ is $\widehat{\bftheta}=\mathbf{A}^{-1}\mathbf{q}$.
+Hence, the MoM estimates of $\bftheta$ is $\hatbftheta =\bfA^{-1}\mathbf{b}$. Once the $\hatbftheta$ is obtained, estimating the vector of fixed effects $\bfomega$ is simply a weighted least square problem (WLS), that is:
+
+\begin{align}
+
+\hat{\bfomega} = \left(\bfZ^\rmT \hat{\bfSig}^{-1} \bfZ\right)^{-1} \bfZ^\rmT(\hat{\bfSig})^{-1} \bfy,
+
+\end{align}
+where $\hat{\bfSig} = \hatsigbeta \bfK+ \hatsige \mathbf{I}_n$.
+
 
 ## Modification 1: Sandwich Estimator
 
+From Equation (7), the covariance matrix of $\hatbftheta$ can be given by the sandwich estimator: $\Cov\left(\hatbftheta\right)=\bfA^{-1}\Cov\left(\bfb\right)\bfA^{-1}$, where
+
+\begin{align}
+  \tag{8}
+  \Cov(\bfb)=\Cov\left(\left[\begin{array}{c}
+\bfy^\rmT \bfVKV \bfy \\
+\bfy^\rmT \bfVy
+\end{array}\right]\right)=\left[\begin{array}{cc}
+\Var\left(\bfy^\rmT \bfVKV \bfy \right) & \Cov\left(\bfy^\rmT \bfVKV \bfy, \bfy^\rmT \bfVy \right) \\
+\Cov\left(\bfy^\rmT \bfVy, \bfy^\rmT \bfVKV \bfy \right) & \Var\left(\bfy^\rmT \bfVy \right)
+\end{array}\right],
+\end{align}
+
+Using the Lemma 1, the elements of $\Cov(\bfb)$ are calculated by $\Var\left(\bfy ^\rmT \bfVKV \bfy \right)=2\tr\left[ (\bfVKV \bfSig)^2\right]$, $\Var\left(\bfy ^\rmT \bfVy \right)=2\tr\left[ (\bfV \bfSig)^2\right]$, $\Cov\left(\bfy^\rmT \bfVKV \bfy, \bfy^\rmT \bfVy \right)=2\tr (\bfVKV \bfSig \bfV \bfSig)$.
+
+Since $\hatbftheta - \bftheta_0$ is asymptotically normal and $\bftheta_0$ is the true value of $\bftheta$, that is:
+
+\begin{align}
+  
+  \Cov\left(\hatbftheta\right)^{-1/2}\left(\hatbftheta - \bftheta_0\right) \rightarrow_d \mathcal{N}\left(\mathbf{0}, \mathbf{I}_2\right),
+
+\end{align}
+
+Then when $\hatbftheta = \bftheta_0$, the rejection region is:
+
+\begin{align}
+  
+  \left(\hatbftheta - \bftheta_0\right)^\rmT \Cov\left(\hatbftheta\right)^{-1}\left(\hatbftheta - \bftheta_0\right) > \chi_{2,\alpha}^2.
+
+\end{align}
 
 ## Modification 2: Delta Method 
+
+Denote $\hat{h}^2=g\left(\hatbftheta\right)=\frac{\hatsigbeta}{\hatsigbeta+\hatsige}$, and the gradient matrix can be computed:
+
+\begin{align}
+  \tag{9}
+  \nabla g\left(\bftheta\right) = \left(\frac{\hatsige}{\left(\hatsigbeta+\hatsige\right)^2},\frac{-\hatsigbeta}{\left(\hatsigbeta+\hatsige\right)^2}\right)^\rmT.
+\end{align}
+
+Then, using the delta method, the variance of $\hat{h}^2$ is:
+
+\begin{align}
+  \tag{10}
+  \Cov \left(\hat{h}^2\right) = \nabla ^\rmT g\left(\bftheta\right) \Cov\left(\hatbftheta\right) \nabla g\left(\bftheta\right).
+
+\end{align}
+
+After the variance of $\hat{h}^2$ is obtained, using the delta theorem, we know that 
+$g(\bftheta)-g(\bftheta_0)$ is also asymptotically normal, that is:
+
+\begin{align}
+
+\Cov \left(\hat{h}^2\right)^{-1/2}\left(g\left(\bftheta\right)-g\left(\bftheta_0\right)\right) \rightarrow_d \mathcal{N}\left(0,1\right), 
+
+\end{align}
+and when $g\left(\bftheta\right)=g\left(\bftheta_0\right)$, the rejection region is:
+
+\begin{align}
+  
+  \left(g\left(\bftheta\right)-g\left(\bftheta_0\right)\right)^\rmT \Cov \left(\hat{h}^2\right)^{-1}\left(g\left(\bftheta\right)-g\left(\bftheta_0\right)\right) > \chi_{1,\alpha}^2.
+
+\end{align}
 
 
 ## Application
@@ -131,12 +223,13 @@ X = mydata[,32:ncol(mydata)]
 ## MoM
 ```{r cache = TRUE}
 result1 = LMM_MoM(y,X,Z,ifintercept=F,ifK2=T,B=100,seed=2023)
-result1
-# sigma2 = c(result1$sb2,result1$se2)
-# var_sigma2 = result1$cov_sigma2
-# solve(var_sigma2)^(1/2)%*%sigma2
-result2 = LMM_MoM(y,X,Z,ifintercept=F,ifK2=F,B=100,seed=2023)
-result2
+thetahat = c(result1$sb2,result1$se2)
+S_thetahat = result1$cov_sigma2
+Atest(thetahat,c(0,0),S_thetahat)
+h2 = result1$h2
+cov_h2 = result1$cov_h2
+Atest(h2,0,cov_h2)
+
 ```
 
 
