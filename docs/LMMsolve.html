@@ -12,7 +12,7 @@
 
 <meta name="author" content="Yida Wu" />
 
-<meta name="date" content="2023-08-23" />
+<meta name="date" content="2023-08-25" />
 
 <title>Method of Moments and MM Algorithm</title>
 
@@ -60,7 +60,7 @@ code span.ot { color: #007020; }
 <div class="inner">
 <h1 class="title toc-ignore">Method of Moments and MM Algorithm</h1>
 <h3 class="author">Yida Wu</h3>
-<h3 class="date">2023-08-23</h3>
+<h3 class="date">2023-08-25</h3>
 </div>
 </header>
 
@@ -81,6 +81,11 @@ Method</a></li>
 <li><a href="#input-the-data" id="toc-input-the-data">Input the
 data</a></li>
 <li><a href="#mom" id="toc-mom">MoM</a></li>
+</ul></li>
+<li><a href="#mm-algorithm" id="toc-mm-algorithm">MM Algorithm</a>
+<ul>
+<li><a href="#the-covariance-matrix-of-boldsymboltheta" id="toc-the-covariance-matrix-of-boldsymboltheta">The covariance matrix
+of <span class="math inline">\(\boldsymbol{\theta}\)</span></a></li>
 <li><a href="#including-plots" id="toc-including-plots">Including
 Plots</a></li>
 </ul></li>
@@ -125,9 +130,9 @@ term.</li>
 <p><span class="math display">\[\begin{align}
 \tag{2}
 \mathbf{y}\sim
-\mathcal{N}\left(\mathbf{Z}\boldsymbol{\omega},\mathbf{\Sigma}\right),
+\mathcal{N}\left(\mathbf{Z}\boldsymbol{\omega},\boldsymbol{\Sigma}\right),
 \end{align}\]</span></p>
-<p>where <span class="math inline">\(\mathbf{\Sigma}=
+<p>where <span class="math inline">\(\boldsymbol{\Sigma}=
 \sigma_\beta^2\mathbf{K}+ \sigma_e^2\mathbf{I}_n\)</span> and <span class="math inline">\(\mathbf{K}=\mathbf{X}\mathbf{X}^\mathrm{T}\)</span>.
 The main target is to estimate the set of unknown parameters <span class="math inline">\(\mathbf{\Theta}=\left\{\boldsymbol{\omega},
 \sigma_\beta^2, \sigma_e^2\right\}\)</span>. We will derive and
@@ -195,16 +200,14 @@ the OLS problem can be re-written as:</p>
 \end{array}\right].\]</span></p>
 <p>Hence, the MoM estimates of <span class="math inline">\(\boldsymbol{\theta}\)</span> is <span class="math inline">\(\hat{\boldsymbol{\theta}}=\mathbf{A}^{-1}\mathbf{b}\)</span>.
 Once the <span class="math inline">\(\hat{\boldsymbol{\theta}}\)</span>
-is obtained, estimating the vector of fixed effects <span class="math inline">\(\boldsymbol{\omega}\)</span> is simply a weighted
-least square problem (WLS), that is:</p>
+is obtained, estimating the vector of fixed effects <span class="math inline">\(\boldsymbol{\omega}\)</span> is a standard general
+least-squares problem, that is:</p>
 <p><span class="math display">\[\begin{align}
-
 \hat{\boldsymbol{\omega}} =
-\left(\mathbf{Z}^\mathrm{T}\hat{\mathbf{\Sigma}}^{-1}
-\mathbf{Z}\right)^{-1} \mathbf{Z}^\mathrm{T}(\hat{\mathbf{\Sigma}})^{-1}
-\mathbf{y},
-
-\end{align}\]</span> where <span class="math inline">\(\mathbf{\Sigma}=
+\left(\mathbf{Z}^\mathrm{T}\hat{\boldsymbol{\Sigma}}^{-1}
+\mathbf{Z}\right)^{-1}
+\mathbf{Z}^\mathrm{T}(\hat{\boldsymbol{\Sigma}})^{-1} \mathbf{y},
+\end{align}\]</span> where <span class="math inline">\(\hat{\boldsymbol{\Sigma}} =
 \hat{\sigma_\beta^2}\mathbf{K}+
 \hat{\sigma_e^2}\mathbf{I}_n\)</span>.</p>
 </div>
@@ -230,28 +233,24 @@ where</p>
 \end{align}\]</span></p>
 <p>Using the Lemma 1, the elements of <span class="math inline">\(\operatorname{Cov}(\mathbf{b})\)</span> are
 calculated by <span class="math inline">\(\operatorname{Var}\left(\mathbf{y}^\mathrm{T}\mathbf{VKV}\mathbf{y}\right)=2\operatorname{tr}\left[
-(\mathbf{VKV}\mathbf{\Sigma})^2\right]\)</span>, <span class="math inline">\(\operatorname{Var}\left(\mathbf{y}^\mathrm{T}\mathbf{Vy}\right)=2\operatorname{tr}\left[
-(\mathbf{V}\mathbf{\Sigma})^2\right]\)</span>, <span class="math inline">\(\operatorname{Cov}\left(\mathbf{y}^\mathrm{T}\mathbf{VKV}\mathbf{y},
-\mathbf{y}^\mathrm{T}\mathbf{Vy}\right)=2\operatorname{tr}(\mathbf{VKV}\mathbf{\Sigma}\mathbf{V}\mathbf{\Sigma})\)</span>.</p>
+(\mathbf{VKV}\boldsymbol{\Sigma})^2\right]\)</span>, <span class="math inline">\(\operatorname{Var}\left(\mathbf{y}^\mathrm{T}\mathbf{Vy}\right)=2\operatorname{tr}\left[
+(\mathbf{V}\boldsymbol{\Sigma})^2\right]\)</span>, <span class="math inline">\(\operatorname{Cov}\left(\mathbf{y}^\mathrm{T}\mathbf{VKV}\mathbf{y},
+\mathbf{y}^\mathrm{T}\mathbf{Vy}\right)=2\operatorname{tr}(\mathbf{VKV}\boldsymbol{\Sigma}\mathbf{V}\boldsymbol{\Sigma})\)</span>.</p>
 <p>Since <span class="math inline">\(\hat{\boldsymbol{\theta}}-
 \boldsymbol{\theta}_0\)</span> is asymptotically normal and <span class="math inline">\(\boldsymbol{\theta}_0\)</span> is the true value
 of <span class="math inline">\(\boldsymbol{\theta}\)</span>, that
 is:</p>
 <p><span class="math display">\[\begin{align}
-  
   \operatorname{Cov}\left(\hat{\boldsymbol{\theta}}\right)^{-1/2}\left(\hat{\boldsymbol{\theta}}-
 \boldsymbol{\theta}_0\right) \rightarrow_d \mathcal{N}\left(\mathbf{0},
 \mathbf{I}_2\right),
-
 \end{align}\]</span></p>
 <p>Then when <span class="math inline">\(\hat{\boldsymbol{\theta}}=
 \boldsymbol{\theta}_0\)</span>, the rejection region is:</p>
 <p><span class="math display">\[\begin{align}
-  
   \left(\hat{\boldsymbol{\theta}}-
 \boldsymbol{\theta}_0\right)^\mathrm{T}\operatorname{Cov}\left(\hat{\boldsymbol{\theta}}\right)^{-1}\left(\hat{\boldsymbol{\theta}}-
 \boldsymbol{\theta}_0\right) &gt; \chi_{2,\alpha}^2.
-
 \end{align}\]</span></p>
 </div>
 <div id="modification-2-delta-method" class="section level2">
@@ -270,23 +269,18 @@ and the gradient matrix can be computed:</p>
 ^\mathrm{T}g\left(\boldsymbol{\theta}\right)
 \operatorname{Cov}\left(\hat{\boldsymbol{\theta}}\right) \nabla
 g\left(\boldsymbol{\theta}\right).
-
 \end{align}\]</span></p>
 <p>After the variance of <span class="math inline">\(\hat{h}^2\)</span>
 is obtained, using the delta theorem, we know that <span class="math inline">\(g(\boldsymbol{\theta})-g(\boldsymbol{\theta}_0)\)</span>
 is also asymptotically normal, that is:</p>
 <p><span class="math display">\[\begin{align}
-
 \operatorname{Cov}\left(\hat{h}^2\right)^{-1/2}\left(g\left(\boldsymbol{\theta}\right)-g\left(\boldsymbol{\theta}_0\right)\right)
 \rightarrow_d \mathcal{N}\left(0,1\right),
-
 \end{align}\]</span> and when <span class="math inline">\(g\left(\boldsymbol{\theta}\right)=g\left(\boldsymbol{\theta}_0\right)\)</span>,
 the rejection region is:</p>
 <p><span class="math display">\[\begin{align}
-  
   \left(g\left(\boldsymbol{\theta}\right)-g\left(\boldsymbol{\theta}_0\right)\right)^\mathrm{T}\operatorname{Cov}\left(\hat{h}^2\right)^{-1}\left(g\left(\boldsymbol{\theta}\right)-g\left(\boldsymbol{\theta}_0\right)\right)
 &gt; \chi_{1,\alpha}^2.
-
 \end{align}\]</span></p>
 </div>
 <div id="application" class="section level2">
@@ -299,6 +293,131 @@ the rejection region is:</p>
 <h2>MoM</h2>
 <pre><code>## [1] 1</code></pre>
 <pre><code>## [1] 0.9896469</code></pre>
+</div>
+</div>
+<div id="mm-algorithm" class="section level1">
+<h1>MM Algorithm</h1>
+<p>Unlike the MoM, the minorization-maximization (MM) algorithm consider
+the likelihood of the variance components model directly. The
+log-likelihood function <span class="math inline">\(\mathcal{L}(\mathbf{y}\mid
+\boldsymbol{\omega},\sigma_\beta^2,\sigma_e^2;\mathbf{Z},\mathbf{K})\)</span>
+is given as:</p>
+<p><span class="math display">\[\begin{align}
+\mathcal{L}(\mathbf{y}\mid
+\boldsymbol{\omega},\sigma_\beta^2,\sigma_e^2;\mathbf{Z},\mathbf{K}) =
+-\frac{1}{2}\operatorname{log}\operatorname{det}\boldsymbol{\Sigma}-\frac{1}{2}(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega})^{\mathrm{T}}\boldsymbol{\Sigma}(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega}),
+\end{align}\]</span></p>
+<p>where <span class="math inline">\(\boldsymbol{\Sigma}=
+\sigma_\beta^2\mathbf{K}+ \sigma_e^2\mathbf{I}_n\)</span>. The MM
+algorithm is utilized to maximizing the log-likelihood function and such
+an algorithm follow from the inequalities:</p>
+<p><span class="math display">\[\begin{align}
+f\left(\boldsymbol{\theta}^{(t+1)}\right) \geq
+g\left(\boldsymbol{\theta}^{(t+1)} \mid \boldsymbol{\theta}^{(t)}\right)
+\geq g\left(\boldsymbol{\theta}^{(t)} \mid
+\boldsymbol{\theta}^{(t)}\right)=f\left(\boldsymbol{\theta}^{(t)}\right).
+\end{align}\]</span></p>
+<p>Therefore, the key step of MM algorithm is to identify the surrogate
+function <span class="math inline">\(g\left(\boldsymbol{\theta}|
+\boldsymbol{\theta}^{(t)}\right)\)</span> by using proper
+inequalities.</p>
+<p>The strategy for maximizing the log-likelihood is to alternate
+updating the fixed effects <span class="math inline">\(\boldsymbol{\omega}\)</span> and the variance
+components <span class="math inline">\(\boldsymbol{\theta}=
+\left(\sigma_\beta^2,\sigma_e^2\right)\)</span>. Updating <span class="math inline">\(\boldsymbol{\omega}\)</span> is a standard general
+least-squares problem with solution</p>
+<p><span class="math display">\[\begin{align}
+\boldsymbol{\omega}^{(t+1)} =
+\left(\mathbf{Z}^\mathrm{T}\boldsymbol{\Sigma}^{-(t)}
+\mathbf{Z}\right)^{-1} \mathbf{Z}^\mathrm{T}\boldsymbol{\Sigma}^{-(t)}
+\mathbf{y},
+\end{align}\]</span> where <span class="math inline">\(\boldsymbol{\Sigma}^{-(t)} =
+\sigma_\beta^{2(t)}\mathbf{K}+ \sigma_e^{2(t)}\mathbf{I}_n\)</span>.</p>
+<p>Then, Updating <span class="math inline">\(\boldsymbol{\theta}\)</span> given <span class="math inline">\(\boldsymbol{\omega}^{(t)}\)</span> depends on two
+minorizations.</p>
+<p>First, using the <strong>joint convexity</strong> of <span class="math inline">\(\boldsymbol{\Sigma}^{(t)}\boldsymbol{\Sigma}^{-1}\boldsymbol{\Sigma}^{(t)}\)</span>,</p>
+<p><span class="math display">\[\begin{align}
+-(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega})^{\mathrm{T}}\boldsymbol{\Sigma}(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega})
+\geq
+-(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega})^{\mathrm{T}}\boldsymbol{\Sigma}^{-(t)}\left(\frac{\sigma_\beta^{4(t)}}{\sigma_\beta^2}\mathbf{K}+\frac{\sigma_e^{4(t)}}{\sigma_e^2}\right)(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega}).
+\end{align}\]</span></p>
+<p>Second, using the <strong>supporting hyperplane</strong>,</p>
+<p><span class="math display">\[\begin{align}
+-\operatorname{log}\operatorname{det}\boldsymbol{\Sigma}\geq
+-\operatorname{log}\operatorname{det}\boldsymbol{\Sigma}^{(t)} -
+\operatorname{tr}\left[\boldsymbol{\Sigma}^{-(t)}\left(\boldsymbol{\Sigma}-\boldsymbol{\Sigma}^{(t)}\right)\right].
+\end{align}\]</span></p>
+<p>Combining of the minorizations gives the overall minorization:</p>
+<p><span class="math display">\[\begin{align}
+&amp;g\left(\boldsymbol{\theta}| \boldsymbol{\theta}^{(t)}\right)
+\\=&amp;
+-\frac{1}{2}\operatorname{tr}\left(\boldsymbol{\Sigma}^{-(t)}\boldsymbol{\Sigma}\right)
+-
+\frac{1}{2}(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega}^{(t)})^{\mathrm{T}}\boldsymbol{\Sigma}^{-(t)}\left(\frac{\sigma_\beta^{4(t)}}{\sigma_\beta^2}\mathbf{K}+\frac{\sigma_e^{4(t)}}{\sigma_e^2}\right)(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega}^{(t)})
++ c^{(t)} \\ =&amp;
+-\frac{\sigma_\beta^2}{2}\operatorname{tr}\left(\boldsymbol{\Sigma}^{-(t)}\mathbf{K}\right)
+-
+\frac{1}{2}\frac{\sigma_\beta^{4(t)}}{\sigma_\beta^2}(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega}^{(t)})^{\mathrm{T}}\boldsymbol{\Sigma}^{-(t)}\mathbf{K}\boldsymbol{\Sigma}^{-(t)}(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega}^{(t)})
+\\
+&amp;
+-\frac{\sigma_e^2}{2}\operatorname{tr}\left(\boldsymbol{\Sigma}^{-(t)}\right)-\frac{1}{2}\frac{\sigma_e^{4(t)}}{\sigma_e^2}(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega}^{(t)})^{\mathrm{T}}\boldsymbol{\Sigma}^{-2(t)}(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega}^{(t)})+c^{(t)},
+\end{align}\]</span></p>
+<p>where <span class="math inline">\(c^{(t)}\)</span> is an irrelevant
+constant. By setting that <span class="math inline">\(\frac{\partial
+g\left(\boldsymbol{\theta}|
+\boldsymbol{\theta}^{(t)}\right)}{\partial\sigma_\beta^2}=0\)</span> and
+<span class="math inline">\(\frac{\partial g\left(\boldsymbol{\theta}|
+\boldsymbol{\theta}^{(t)}\right)}{\partial\sigma_e^2}=0\)</span>, the
+updates of <span class="math inline">\(\boldsymbol{\theta}\)</span> are
+given as follows:</p>
+<p><span class="math display">\[\begin{align}
+&amp;\sigma_\beta^{2(t+1)}=\sigma_\beta^{2(t)}\sqrt{\frac{(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega}^{(t)})^{\mathrm{T}}\boldsymbol{\Sigma}^{-(t)}\mathbf{K}\boldsymbol{\Sigma}^{(t)}(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega}^{(t)})}{\operatorname{tr}\left(\boldsymbol{\Sigma}^{-(t)}\mathbf{K}\right)
+}},\\
+&amp;\sigma_e^{2(t+1)}=\sigma_e^{2(t)}\sqrt{\frac{(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega}^{(t)})^{\mathrm{T}}\boldsymbol{\Sigma}^{-2(t)}(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega}^{(t)})}{\operatorname{tr}\left(\boldsymbol{\Sigma}^{-(t)}\right)
+}}.
+\end{align}\]</span></p>
+<div id="the-covariance-matrix-of-boldsymboltheta" class="section level2">
+<h2>The covariance matrix of <span class="math inline">\(\boldsymbol{\theta}\)</span></h2>
+<p>The covariance matrix of <span class="math inline">\(\hat{\boldsymbol{\theta}}\)</span> can be
+calculated from the inverse of Fisher Information Matrix (FIM). Hence,
+the first step is to obtain FIM, that is</p>
+<p><span class="math display">\[\begin{align}
+\operatorname{FIM} =
+-\mathbb{E}\left[\frac{\partial^2\mathcal{L}}{\partial\boldsymbol{\theta}^2}\right].
+\end{align}\]</span></p>
+<p>The first derivatives are: <span class="math display">\[\begin{align}
+&amp;\frac{\partial\mathcal{L}}{\partial\sigma_\beta^2}=\frac{1}{2}\operatorname{tr}\left[-\boldsymbol{\Sigma}^{-1}\mathbf{K}+(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega})^{\mathrm{T}}\boldsymbol{\Sigma}^{-1}\mathbf{K}\boldsymbol{\Sigma}^{-1}(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega})
+\right],\\
+&amp;\frac{\partial\mathcal{L}}{\partial\sigma_e^2}=\frac{1}{2}\operatorname{tr}\left[-\boldsymbol{\Sigma}^{-1}
++(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega})^{\mathrm{T}}\boldsymbol{\Sigma}^{-2}(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega})
+\right].
+\end{align}\]</span> And the second derivatives are:</p>
+<p><span class="math display">\[\begin{align}
+&amp;\frac{\partial^2\mathcal{L}}{\partial{\left(\sigma_\beta^2\right)^2}}
+=
+\frac{1}{2}\operatorname{tr}\left[\left(\boldsymbol{\Sigma}^{-1}\mathbf{K}\right)^2-2\left(\boldsymbol{\Sigma}^{-1}\mathbf{K}\right)^2\boldsymbol{\Sigma}^{-1}(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega})(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega})^{\mathrm{T}}\right],\\
+&amp;\frac{\partial^2\mathcal{L}}{\partial{\left(\sigma_e^2\right)^2}}
+=\frac{1}{2}\operatorname{tr}\left[\boldsymbol{\Sigma}^{-2}-2\boldsymbol{\Sigma}^{-3}(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega})(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega})^{\mathrm{T}}\right],\\
+&amp;\frac{\partial^2\mathcal{L}}{\partial{\sigma_\beta^2}\partial{\sigma_e^2}}
+=  \frac{1}{2}\operatorname{tr}\left[\boldsymbol{\Sigma}^{-1}\mathbf{K}\boldsymbol{\Sigma}^{-1}-\left(\boldsymbol{\Sigma}^{-1}\mathbf{K}\boldsymbol{\Sigma}^{-2}
++\boldsymbol{\Sigma}^{-2}\mathbf{K}\boldsymbol{\Sigma}^{-1}
+\right)(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega})(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega})^{\mathrm{T}}\right].
+\end{align}\]</span></p>
+<p>Since <span class="math inline">\(\mathbb{E}\left[(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega})(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega})^{\mathrm{T}}=\boldsymbol{\Sigma}\right]\)</span>,
+the FIM is:</p>
+<p><span class="math display">\[\begin{align}
+\operatorname{FIM} =&amp;
+-\mathbb{E}\left[\frac{\partial^2\mathcal{L}}{\partial\boldsymbol{\theta}^2}\right]\\
+=&amp; \frac{1}{2}\left[\begin{array}{cc}
+\operatorname{tr}\left[\left(\boldsymbol{\Sigma}^{-1}
+\mathbf{K}\right)^2\right] &amp;
+\operatorname{tr}\left(\boldsymbol{\Sigma}^{-2}\mathbf{K}\bf\right) \\
+\operatorname{tr}\left(\boldsymbol{\Sigma}^{-2}\mathbf{K}\bf\right)  &amp;
+\operatorname{tr}\left[\boldsymbol{\Sigma}^{-2}\right]
+\end{array}\right].
+\end{align}\]</span></p>
+<p>Therefore, the covariance matrix of <span class="math inline">\(\hat{\boldsymbol{\theta}}\)</span> is the inverse
+of FIM.</p>
 </div>
 <div id="including-plots" class="section level2">
 <h2>Including Plots</h2>
