@@ -8,7 +8,7 @@
 #####output####
 ##estimator: a list:sb2,se2,omega
 
-LMM_MM = function(y,X,Z,maxiter,tol=1e-6,sigma2_beta,sigma2_e,ifintercept=F,ifed=F,seed=2023){
+LMM_MM = function(y,X,Z,maxiter,tol=1e-6,sb2,se2,ifintercept=F,ifed=F,seed=2023){
   X = as.matrix(X)
   Z = as.matrix(Z)
   
@@ -33,6 +33,8 @@ LMM_MM = function(y,X,Z,maxiter,tol=1e-6,sigma2_beta,sigma2_e,ifintercept=F,ifed
   V = diag(n) - Z%*%solve(t(Z)%*%Z)%*%t(Z)
   
   allL = c()
+  allsb2 = sb2
+  allse2 = se2
   
   if(ifed==T){
     # eigenK = eigen(K)
@@ -41,7 +43,7 @@ LMM_MM = function(y,X,Z,maxiter,tol=1e-6,sigma2_beta,sigma2_e,ifintercept=F,ifed
     # 
     # UZ = t(U)%*%Z
     # Uy = t(U)%*%y
-    # d = solve(D*sigma2_beta+sigma2_e*diag(n))
+    # d = solve(D*sb2+se2*diag(n))
     # for(t in 1:maxiter){
     # 
     #   UZd = t(UZ)%*%d
@@ -49,14 +51,14 @@ LMM_MM = function(y,X,Z,maxiter,tol=1e-6,sigma2_beta,sigma2_e,ifintercept=F,ifed
     # 
     #   res = Uy-UZ%*%omega
     # 
-    #   sigma2_beta = sigma2_beta*sqrt(t(res)%*%d%*%D%*%d%*%res/sum(d*D))
+    #   sb2 = sb2*sqrt(t(res)%*%d%*%D%*%d%*%res/sum(d*D))
     # 
-    #   sigma2_e = sigma2_e*sqrt(t(res)%*%d%*%d%*%res/sum(d))
+    #   se2 = se2*sqrt(t(res)%*%d%*%d%*%res/sum(d))
     # 
-    #   sigma2_beta = as.numeric(sigma2_beta)
-    #   sigma2_e = as.numeric(sigma2_e)
+    #   sb2 = as.numeric(sb2)
+    #   se2 = as.numeric(se2)
     # 
-    #   d = solve(D*sigma2_beta+sigma2_e*diag(n))
+    #   d = solve(D*sb2+se2*diag(n))
     #   L_sig = 0.5*log(det(d)) - 0.5 *t(res) %*%d%*%res
     #   allL = c(allL,as.numeric(L_sig))
     # 
@@ -71,24 +73,27 @@ LMM_MM = function(y,X,Z,maxiter,tol=1e-6,sigma2_beta,sigma2_e,ifintercept=F,ifed
     d = eigenK$values #vector
     U = eigenK$vectors #matrix
     
-    UZ = t(U)%*%Z
-    Uy = t(U)%*%y
-    invd = 1/(d*sigma2_beta+sigma2_e)
+    UtZ = t(U)%*%Z
+    Uty = t(U)%*%y
+    invd = 1/(d*sb2+se2)
+    
     for(t in 1:maxiter){
-
-      omega = solve((t(UZ*invd))%*%UZ) %*% (t(UZ) %*% (Uy*invd))
       
-      res = Uy-UZ%*%omega
+      tmp = t(UtZ*invd)
+      # omega = solve(tmp%*%UZ) %*% tmp%*%Uty
+      omega = solve(tmp%*%UtZ,tmp%*%Uty) 
+      res = Uty-UtZ%*%omega
       
-      sigma2_beta = sigma2_beta*sqrt(sum(res^2*invd^2*d)/sum(invd*d))
+      sb2 = sb2*sqrt(sum(res^2*invd^2*d)/sum(invd*d))
+      allsb2 = c(allsb2,sb2)
       
-      sigma2_e = sigma2_e*sqrt(sum(res^2*invd^2/sum(invd)))
+      se2 = se2*sqrt(sum(res^2*invd^2/sum(invd)))
+      allse2 = c(allse2,se2)
       
-      invd = 1/(d*sigma2_beta+sigma2_e)
-      L_sig = 0.5*sum(log(invd)) - 0.5 *sum(res^2*invd)
+      invd = 1/(d*sb2+se2)
+      L_sig = 0.5*sum(log(invd)) - 0.5 *sum(res^2*invd)- n/2*log(2*pi)
       
       allL = c(allL,L_sig)
-      
       if(t>1){
         if(abs(allL[t] - allL[t-1]) < tol){
           break
@@ -96,9 +101,10 @@ LMM_MM = function(y,X,Z,maxiter,tol=1e-6,sigma2_beta,sigma2_e,ifintercept=F,ifed
       }
     }
     
+    invSig = U%*%(1/(d*sb2+se2)*t(U)) 
   }
   else{
-    Sig = sigma2_beta*K+sigma2_e*diag(n)
+    Sig = sb2*K+se2*diag(n)
     invSig = solve(Sig)
     
     for(t in 1:maxiter){
@@ -107,17 +113,18 @@ LMM_MM = function(y,X,Z,maxiter,tol=1e-6,sigma2_beta,sigma2_e,ifintercept=F,ifed
       omega = solve(ZinvSig%*%Z)%*%ZinvSig%*%y
       res = y - Z%*%omega
       
-      sigma2_beta = sigma2_beta*sqrt(t(res)%*%invSig%*%K%*%invSig%*%res/sum(invSig*K))
+      sb2 = sb2*sqrt(t(res)%*%invSig%*%K%*%invSig%*%res/sum(invSig*K))
       
-      sigma2_e = sigma2_e*sqrt(t(res)%*%invSig%*%invSig%*%res/sum(diag(invSig)))
+      se2 = se2*sqrt(t(res)%*%invSig%*%invSig%*%res/sum(diag(invSig)))
       
-      sigma2_beta = as.numeric(sigma2_beta)
-      sigma2_e = as.numeric(sigma2_e)
+      sb2 = as.numeric(sb2)
+      se2 = as.numeric(se2)
       
-      Sig = sigma2_beta*K+sigma2_e*diag(n)
+      Sig = sb2*K+se2*diag(n)
       invSig = solve(Sig)
       ZinvSig = t(Z) %*% invSig
-      L_sig = -0.5*log(det(Sig)) - 0.5 *t(res) %*%invSig %*%res
+      L_sig = 0.5*log(det(Sig)) - 0.5 *t(res) %*%invSig %*%res- n/2*log(2*pi)
+      
       allL = c(allL,L_sig)
       
       if(t>1){
@@ -129,27 +136,24 @@ LMM_MM = function(y,X,Z,maxiter,tol=1e-6,sigma2_beta,sigma2_e,ifintercept=F,ifed
   }
   
   #the covariance matrix
-  invSig = U%*%(1/(d*sigma2_beta+sigma2_e)*t(U)) 
-  invSigK = invSig%*%K
   
+  invSigK = invSig%*%K
   FIM = matrix(0,2,2)
   FIM[1,1] = sum(invSigK^2)/2
   FIM[2,2] = sum(invSig^2)/2
   FIM[1,2] = sum(invSig*invSigK)/2
   FIM[2,1] = FIM[1,2]
-  
   cov_sigma2 = solve(FIM)
   
   #delta method
-  sigma2_total = sum(sigma2_beta+sigma2_e)
-  h2 = sigma2_beta/sigma2_total
+  sigma2_total = sum(sb2+se2)
+  h2 = sb2/sigma2_total
   
-  dh2 = c(sigma2_e/(sigma2_total^2),-sigma2_beta/(sigma2_total^2))
+  dh2 = c(se2/(sigma2_total^2),-sb2/(sigma2_total^2))
   
   cov_h2 = as.numeric(t(dh2)%*%cov_sigma2%*%dh2) 
   
-  
-  return(list(sb2=sigma2_beta,se2=sigma2_e,allL=allL,
+  return(list(sb2=sb2,se2=se2,allL=allL,allsb2=allsb2,allse2 = allse2,
               cov_sigma2 = cov_sigma2, cov_h2 = cov_h2))
 }
 

@@ -30,12 +30,22 @@ mat = t(eVec)%*%diag(n)%*%eVec
 eigenI = eigen(diag(3))
 eigenI$values
 
+init = Sys.time()
 fit_MM=linRegMM(X=X,y=y,Z=Z,tol=1e-6,sb2=0.2,se2=1,maxIter = 500,verbose=F)
-fit_MM$sb2
-fit_MM$se2
+Sys.time() - init
+
+init = Sys.time()
+myMM = LMM_MM(y,X,Z,maxiter=500,tol=1e-6,sb2=0.2,se2=1,ifintercept=T,ifed=T,seed=100)
+Sys.time() - init
+
 fit_MM$allsb2
-myMM = LMM_MM(y,X,Z,maxiter=500,tol=1e-6,sigma2_beta=0.2,sigma2_e=1,ifintercept=T,ifed=T,seed=100)
 myMM$allsb2
+
+fit_MM$allse2
+myMM$allse2
+
+fit_MM$lb
+myMM$allL
 
 a = sum(fit_MM$K)
 aa = sum(myMM$K)
