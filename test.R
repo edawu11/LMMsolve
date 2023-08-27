@@ -20,3 +20,23 @@ result1$covSig
 result2 = LMM_MoM(y,X,Z,ifintercept=T,ifK2=T,B=100,seed=2023)
 result2$sb2
 result2$se2
+
+#######
+eigenK <- eigen(K)
+eVal <- eigenK$values
+eVec <- eigenK$vectors
+mat = t(eVec)%*%diag(n)%*%eVec
+
+eigenI = eigen(diag(3))
+eigenI$values
+
+fit_MM=linRegMM(X=X,y=y,Z=Z,tol=1e-6,sb2=0.2,se2=1,maxIter = 500,verbose=F)
+fit_MM$sb2
+fit_MM$se2
+fit_MM$allsb2
+myMM = LMM_MM(y,X,Z,maxiter=500,tol=1e-6,sigma2_beta=0.2,sigma2_e=1,ifintercept=T,ifed=T,seed=100)
+myMM$allsb2
+
+a = sum(fit_MM$K)
+aa = sum(myMM$K)
+

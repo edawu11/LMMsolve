@@ -7,24 +7,24 @@ author: "Yida Wu"
 date: '`r format(Sys.Date())`'
 CJKmainfont: SimSun
 output:
-  # prettydoc::html_pretty:
-  #   theme: architect
-  #   highlight: github
-  #   toc: yes
-  pdf_document:
-    includes:
-      header-includes:
-        - \usepackage{xeCJK}
-        - \usepackage{amsmath}
-        - \usepackage{listings}
-        - \usepackage{amsfonts}
-        - \usepackage{amssymb}
-        - \usepackage{bm}
-        - \usepackage{algorithm}
-        - \usepackage{algorithmic}
-    latex_engine: xelatex
+  prettydoc::html_pretty:
+    theme: architect
+    highlight: github
     toc: yes
-    number_sections: yes
+  # pdf_document:
+  #   includes:
+  #     header-includes:
+  #       - \usepackage{xeCJK}
+  #       - \usepackage{amsmath}
+  #       - \usepackage{listings}
+  #       - \usepackage{amsfonts}
+  #       - \usepackage{amssymb}
+  #       - \usepackage{bm}
+  #       - \usepackage{algorithm}
+  #       - \usepackage{algorithmic}
+  #   latex_engine: xelatex
+  #   toc: yes
+  #   number_sections: yes
 ---
 
 ```{r setup,echo=FALSE,warning=FALSE,message=FALSE}
@@ -72,7 +72,9 @@ source("R/Atest.R")
 \def\sigbetatt {\sigma_\beta^{4(t)}}
 \def\sigett {\sigma_e^{4(t)}}
 \def\half {\frac{1}{2}}
-
+\def\bfU {\mathbf{U}}
+\def\bfD {\mathbf{D}}
+\def\bfI {\mathbf{I}}
 > Linear mixed models (LMMs) have emerged as a key tool for heritability estimation where the parameters of the LMMs, i.e. the variance components, are related to the heritability attributable to the SNPs analyzed.
 
 
@@ -250,7 +252,7 @@ Atest(h2,0,cov_h2)
 Unlike the MoM, the minorization-maximization (MM) algorithm consider the likelihood of the variance components model directly. The log-likelihood function $\mathcal{L}(\bfy \mid \bfomega,\sigbeta,\sige;\bfZ,\bfK)$ is given as:
 
 \begin{align}
- \mathcal{L}(\bfy \mid \bfomega,\sigbeta,\sige;\bfZ,\bfK) = -\half\log\det\bfSig -\half(\bfy-\bfZ\bfomega)^{\rmT}\bfSig(\bfy-\bfZ\bfomega), 
+ \mathcal{L}(\bfy \mid \bfomega,\sigbeta,\sige;\bfZ,\bfK) = -\half\log\det\bfSig -\half(\bfy-\bfZ\bfomega)^{\rmT}\bfSig^{-1}(\bfy-\bfZ\bfomega), 
 \end{align}
 
 where $\bfSig = \sigbeta \bfK+ \sige \mathbf{I}_n$. The MM algorithm is utilized to maximizing the log-likelihood function and such an algorithm follow from the inequalities:
@@ -293,11 +295,29 @@ Combining of the minorizations gives the overall minorization:
 where $c^{(t)}$ is an irrelevant constant. By setting that $\frac{\partial g\left(\bftheta | \bftheta^{(t)}\right)}{\partial\sigbeta}=0$ and $\frac{\partial g\left(\bftheta | \bftheta^{(t)}\right)}{\partial\sige}=0$, the updates of $\bftheta$ are given as follows:
 
 \begin{align}
-&\sigma_\beta^{2(t+1)}=\sigbetat\sqrt{\frac{(\bfy-\bfZ\bfomega^{(t)})^{\rmT}\bfSig^{-(t)}\bfK\bfSig^{(t)}(\bfy-\bfZ\bfomega^{(t)})}{\tr\left(\bfSig^{-(t)}\bfK\right) }},\\
+&\sigma_\beta^{2(t+1)}=\sigbetat\sqrt{\frac{(\bfy-\bfZ\bfomega^{(t)})^{\rmT}\bfSig^{-(t)}\bfK\bfSig^{(-t)}(\bfy-\bfZ\bfomega^{(t)})}{\tr\left(\bfSig^{-(t)}\bfK\right) }},\\
 &\sigma_e^{2(t+1)}=\siget\sqrt{\frac{(\bfy-\bfZ\bfomega^{(t)})^{\rmT}\bfSig^{-2(t)}(\bfy-\bfZ\bfomega^{(t)})}{\tr\left(\bfSig^{-(t)}\right) }}.
 \end{align}
 
-## The covariance matrix of $\bftheta$
+Since the major computational cost this algorithm is inversion of the covariance matrix $\bfSig$ at each iteration. Eigenvalue decomposition can be conduct to boost the efficiency.
+
+Using the fact that $\bfK$ is a real symmetric matrix, we can get $\bfK = \bfU\bfD\bfU^{\rmT}$. Since $\bfU\bfU^{\rmT}=\bfI$, the covariance matrix $\bfSig$ is given as:
+
+\begin{align}
+\bfSig =& \sigbeta\bfU\bfD\bfU^{\rmT}+\sige\bfI \\
+=&  \sigbeta\bfU\bfD\bfU^{\rmT}+\sige\bfU\bfU^{\rmT} \\
+=&  \bfU\left(\sigbeta\bfD+\sige\bfI\right)\bfU^{\rmT},
+\end{align}
+
+Hence, the inversion of the covariance matrix $\bfSig$ is:
+
+\begin{align}
+\bfSig^{-1} = \bfU\left(\sigbeta\bfD+\sige\bfI\right)^{-1}\bfU^{\rmT}.
+\end{align}
+
+With the revised responses $\$
+
+## The covariance matrix of $\hatbftheta$
 
 The covariance matrix of $\hatbftheta$ can be calculated from the inverse of Fisher Information Matrix (FIM). Hence, the first step is to obtain FIM, that is 
 
