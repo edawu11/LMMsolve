@@ -39,8 +39,7 @@ LMM_MoM = function(y,X,Z,ifintercept=F,ifK2=T,B=100,seed=2023){
   trVK = sum(diag(VK))
   
   if(ifK2==T){
-    # trVK2 = sum(VK^2)
-    trVK2 = norm(VK,type = "F")
+    trVK2 = sum(VK^2)
   }
   else{
     Zd = matrix(rnorm(n*B),n,B)
