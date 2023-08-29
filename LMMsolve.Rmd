@@ -2,29 +2,29 @@
 knit: (function(inputFile, encoding) {
   rmarkdown::render(inputFile, encoding = encoding, output_dir ="docs") })
 
-title: "Method of Moments and MM Algorithm"
+title: "Details of Derivation: MoM and MM"
 author: "Yida Wu"
 date: '`r format(Sys.Date())`'
 CJKmainfont: SimSun
 output:
-  prettydoc::html_pretty:
-    theme: architect
-    highlight: github
-    toc: yes
-  # pdf_document:
-  #   includes:
-  #     header-includes:
-  #       - \usepackage{xeCJK}
-  #       - \usepackage{amsmath}
-  #       - \usepackage{listings}
-  #       - \usepackage{amsfonts}
-  #       - \usepackage{amssymb}
-  #       - \usepackage{bm}
-  #       - \usepackage{algorithm}
-  #       - \usepackage{algorithmic}
-  #   latex_engine: xelatex
+  # prettydoc::html_pretty:
+  #   theme: architect
+  #   highlight: github
   #   toc: yes
-  #   number_sections: yes
+  pdf_document:
+    includes:
+      header-includes:
+        - \usepackage{xeCJK}
+        - \usepackage{amsmath}
+        - \usepackage{listings}
+        - \usepackage{amsfonts}
+        - \usepackage{amssymb}
+        - \usepackage{algorithm}
+        - \usepackage{algorithmic}
+    latex_engine: xelatex
+    toc: yes
+    toc_depth: 2
+    number_sections: yes
 ---
 
 ```{r setup,echo=FALSE,warning=FALSE,message=FALSE}
@@ -37,6 +37,7 @@ knitr::opts_chunk$set(
 	out.width = "60%"
 )
 source("R/LMM_MoM.R")
+source("R/LMM_MM.R")
 source("R/Atest.R")
 ```
 
@@ -44,7 +45,7 @@ source("R/Atest.R")
 \def\bfV {\mathbf{V}}
 \def\bfy {\mathbf{y}}
 \def\bfZ {\mathbf{Z}}
-\def\bfomega {\boldsymbol{\omega}}
+\def\bfomega {\symbf{\omega}}
 \def\rmT {\mathrm{T}}
 \def\Cov {\operatorname{Cov}}
 \def\bfVy {\mathbf{Vy}}
@@ -52,18 +53,20 @@ source("R/Atest.R")
 \def\bfVKV {\mathbf{VKV}}
 \def\bfK {\mathbf{K}}
 \def\bfVKVK {\mathbf{VKVK}}
-\def\bftheta {\boldsymbol{\theta}}
-\def\bfbeta {\boldsymbol{\beta}}
-\def\hatbftheta {\hat{\boldsymbol{\theta}}}
+\def\bftheta {\symbf{\theta}}
+\def\bfbeta {\symbf{\beta}}
+\def\hatbftheta {\hat{\symbf{\theta}}}
 \def\bfA {\mathbf{A}}
 \def\bfb {\mathbf{b}}
 \def\Var {\operatorname{Var}}
 \def\tr {\operatorname{tr}}
-\def\bfSig {\boldsymbol{\Sigma}}
+\def\bfSig {\symbf{\Sigma}}
 \def\sigbeta {\sigma_\beta^2}
 \def\sige {\sigma_e^2}
-\def\hatsigbeta {\hat{\sigma_\beta^2}}
-\def\hatsige {\hat{\sigma_e^2}}
+\def\bfsig {\symbf{\sigma}^2}
+\def\bfsigt {\symbf{\sigma}^{2(t)}}
+\def\hatsigbeta {\hat{\sigma}_\beta^2}
+\def\hatsige {\hat{\sigma}_e^2}
 \def\log {\operatorname{log}}
 \def\Pr {\operatorname{Pr}}
 \def\det {\operatorname{det}}
@@ -75,104 +78,104 @@ source("R/Atest.R")
 \def\bfU {\mathbf{U}}
 \def\bfD {\mathbf{D}}
 \def\bfI {\mathbf{I}}
-> Linear mixed models (LMMs) have emerged as a key tool for heritability estimation where the parameters of the LMMs, i.e. the variance components, are related to the heritability attributable to the SNPs analyzed.
-
+\def\tibfy {\tilde{\mathbf{y}}}
+\def\tibfZ {\tilde{\mathbf{Z}}}
+\def\tibfDt {\tilde{\mathbf{D}}^{-(t)}}
 
 # Linear Mixed Model
 
 The linear mixed model builds upon a linear relationship from $\bfy$ to $\bfX$ and $\bfZ$ by
 
-\begin{equation}
-  \tag{1}
+\begin{align}
   \bfy=\bfZ\bfomega+\bfX \bfbeta+\mathbf{e}.
-\end{equation}
+\end{align}
 
 - $\bfy \in \mathbb{R}^n$, $\bfy$ is centered so that $\sum_ny_n=0$;
 - $\bfX \in \mathbb{R}^{n\times p}$, each column of $\bfX$ is centered and scaled so that $\sum_nx_{n,p}=0$ and $\sum_nx_{n,p}^2=\frac{1}{p}$;
 - $\bfZ$ is a $n \times c$ matrix of covariates;
-- $\bfomega \in \mathbb{R}^p$ is the vector of fixed effects; 
+- $\bfomega \in \mathbb{R}^c$ is the vector of fixed effects; 
 - $\bfbeta$ is the vector of random effects with $\bfbeta\sim \mathcal{N}\left(0, \sigbeta \mathbf{I}_p\right)$;
 - $\mathbf{e} \sim \mathcal{N}\left(0, \sige \mathbf{I}_n\right)$ is the independent noise term.
 
 Note that the linear mixed model (1) can be re-written as:
 
 \begin{align}
-\tag{2}
 \bfy \sim \mathcal{N}\left(\bfZ\bfomega,\bfSig\right),
 \end{align}
 
 where $\bfSig = \sigbeta \bfK+ \sige \mathbf{I}_n$ and $\bfK=\bfX\bfX^\rmT$.
-The main target is to estimate the set of unknown parameters $\mathbf{\Theta}=\left\{\bfomega, \sigbeta, \sige\right\}$. We will derive and implement two methods (MoM and MM) in this project.
+The first target is to estimate the set of unknown parameters $\symbf{\Theta}=\left\{\bfomega, \sigbeta, \sige\right\}$. We will derive and implement two methods (MoM and MM) in this project.
 
 # Method-of-Moments
 
 ## Derivation
 The **principle** of the Method-of-Moments (MoM) is to obtain estimates of the model parameters such that the theoretical moments match the sample moments. 
 
-First, Equation (1) is transformed by multiplying by the projection matrix $\bfV=\mathbf{I}_n-\bfZ\left(\bfZ^T \bfZ\right)^{-1} \bfZ^T$ (Note that $\bfV^{\rmT}=\bfV$ and $\bfV^{\rmT}\bfV=\bfV$) :
+First, Equation (1) is transformed by multiplying by the projection matrix $\bfV=\mathbf{I}_n-\bfZ\left(\bfZ^{\rmT} \bfZ\right)^{-1} \bfZ^{\rmT}$ (Note that $\bfV^{\rmT}=\bfV$ and $\bfV^{\rmT}\bfV=\bfV$) :
 
-\begin{equation}
-  \tag{3}
-  \bfVy=\mathbf{VX} \bfbeta+\mathbf{Ve}.
-\end{equation}
-
-From Equation (2), the first theoretical moment and the second theoretical moment can be derived. $\mathbb{E}\left[\bfVy\right]=\mathbf{0}$ while the population covariance of the vector $\bfVy$ is:
 \begin{align}
-  \tag{4}
-  \Cov\left(\bfVy\right) &= \mathbb{E}\left[\bfVy\bfy^\rmT\bfV\right] - \mathbb{E}\left[\bfVy\right] \mathbb{E}\left[\bfVy\right]^{\rmT}\\ &= \sigbeta \mathbf{VKV} + \sige \bfV.
+  \bfVy=\mathbf{VX} \bfbeta+\mathbf{Ve}.
+\end{align}
+
+From Equation (3), the first theoretical moment and the second theoretical moment can be derived. $\mathbb{E}\left[\bfVy\right]=\mathbf{0}$ while the population covariance of the vector $\bfVy$ is:
+\begin{align}
+\begin{split}
+\Cov\left(\bfVy\right) &= \mathbb{E}\left[\bfVy\bfy^\rmT\bfV\right] - \mathbb{E}\left[\bfVy\right] \mathbb{E}\left[\bfVy\right]^{\rmT}\\ &= \sigbeta \mathbf{VKV} + \sige \bfV.
+\end{split}
 \end{align}
 
 
-Next, the MoM estimator is obtained by solving the following ordinary least squares (OLS) problem:
+Next, the MoM estimator is obtained by solving the following **ordinary least squares (OLS) problem**:
 
 \begin{align}
-  \tag{5}
-  \left(\hatsigbeta, \hatsige\right) = \operatorname{argmin}_{\sigbeta, \sige} \left\|(\bfVy)(\bfVy)^\rmT-\left(\sigbeta \bfV \bfK \bfV+\sige \bfV\right)\right\|_F^2,
+  \left(\hatsigbeta, \hatsige\right) = \operatorname{argmin}_{\sigbeta, \sige} \left\|(\bfVy)(\bfVy)^\rmT-\left(\sigbeta \bfV \bfK \bfV+\sige \bfV\right)\right\|_F^2.
 \end{align}
 
 Due to the fact that $\|\bfA\|_F=\sqrt{\tr\left(\bfA \bfA^T\right)}$, the OLS problem can be re-written as:
 
 \begin{align}
-  \tag{6}
   \left(\hatsigbeta, \hatsige\right)= \operatorname{argmin}_{\sigbeta, \sige} \tr\left[\left((\bfVy)(\bfVy)^\rmT-\left(\sigbeta \bfVKV+\sige \bfV\right)\right)\left((\bfVy)(\bfVy)^\rmT-\left(\sigbeta \bfVKV+\sige \bfV\right)\right)^\rmT\right].
 \end{align}
 
 Then, the MoM estimator satisfies the normal equations:
 
 \begin{align}
-  \tag{7}
-  \bfA\hatbftheta =\bfb,
+	\bfA\hat{\symbf{\sigma}}^2 =\bfb,
+	\end{align}
+
+where
+\begin{align}
+	\begin{split}
+	\bfA&=\left[\begin{array}{ll}
+	\tr\left(\bfVKVK \right) & \tr\left(\bfVK\right) \\
+	\tr\left(\bfVK \right) & n-c
+	\end{array}\right],
+	\hat{\symbf{\sigma}}^2 =\left[\begin{array}{l}
+	\hatsigbeta \\
+	\hatsige
+	\end{array}\right],
+	\bfb =\left[\begin{array}{l}
+	\bfy^{\rmT} \bfVKV \bfy \\
+	\bfy^{\rmT} \bfVy
+	\end{array}\right].
+	\end{split}\nonumber
 \end{align}
 
-where $$\bfA=\left[\begin{array}{ll}
-\tr\left(\bfVKVK \right) & \tr\left(\bfVK\right) \\
-\tr\left(\bfVK \right) & n-c
-\end{array}\right],$$
-
-$$\hatbftheta =\left[\begin{array}{l}
-\hatsigbeta \\
-\hatsige
-\end{array}\right],$$
-
-$$\bfb =\left[\begin{array}{l}
-\bfy^{\rmT} \bfVKV \bfy \\
-\bfy^{\rmT} \bfVy
-\end{array}\right].$$
-
-Hence, the MoM estimates of $\bftheta$ is $\hatbftheta =\bfA^{-1}\mathbf{b}$. Once the $\hatbftheta$ is obtained, estimating the vector of fixed effects $\bfomega$ is a standard general least-squares problem, that is:
+Hence, the MoM estimates of $\bfsig$ is $\hat{\symbf{\sigma}}^2 =\bfA^{-1}\bfb$. Once the $\bfsig$ is obtained, estimating the vector of fixed effects $\bfomega$ is a **standard general least-squares problem**, that is:
 
 \begin{align}
 \hat{\bfomega} = \left(\bfZ^\rmT \hat{\bfSig}^{-1} \bfZ\right)^{-1} \bfZ^\rmT(\hat{\bfSig})^{-1} \bfy,
 \end{align}
 where $\hat{\bfSig} = \hatsigbeta \bfK+ \hatsige \mathbf{I}_n$.
 
+The one remaining quantity that we need to compute efficiently is $\tr(\bfVKVK)$. Since $\bfVK$ is a symmetric matrix, we can use $\left\| \bfVK \right\|_F^2$ to replace $\tr(\bfVKVK)$, which can compute efficiently. Another method is using a randomized estimator $L_B=\frac{1}{B} \sum_b z_b^{\rmT} \bfVKVK z_b$, which is the unbiased estimator of the trace of $\bfVKVK$ given $B$ random vectors, $z_1,\dots,z_B$, drawn independently from a standard normal distribution. 
+
 
 ## Modification 1: Sandwich Estimator
 
-From Equation (7), the covariance matrix of $\hatbftheta$ can be given by the sandwich estimator: $\Cov\left(\hatbftheta\right)=\bfA^{-1}\Cov\left(\bfb\right)\bfA^{-1}$, where
+From Equation (7), the covariance matrix of $\hat{\symbf{\sigma}}^2$ can be given by \textbf{the sandwich estimator}: $\Cov\left(\hat{\symbf{\sigma}}^2\right)=\bfA^{-1}\Cov\left(\bfb\right)\bfA^{-1}$, where 
 
 \begin{align}
-  \tag{8}
   \Cov(\bfb)=\Cov\left(\left[\begin{array}{c}
 \bfy^\rmT \bfVKV \bfy \\
 \bfy^\rmT \bfVy
@@ -182,73 +185,57 @@ From Equation (7), the covariance matrix of $\hatbftheta$ can be given by the sa
 \end{array}\right],
 \end{align}
 
-Using the Lemma 1, the elements of $\Cov(\bfb)$ are calculated by $\Var\left(\bfy ^\rmT \bfVKV \bfy \right)=2\tr\left[ (\bfVKV \bfSig)^2\right]$, $\Var\left(\bfy ^\rmT \bfVy \right)=2\tr\left[ (\bfV \bfSig)^2\right]$, $\Cov\left(\bfy^\rmT \bfVKV \bfy, \bfy^\rmT \bfVy \right)=2\tr (\bfVKV \bfSig \bfV \bfSig)$.
-
-Since $\hatbftheta - \bftheta_0$ is asymptotically normal and $\bftheta_0$ is the true value of $\bftheta$, that is:
+Using the Lemma 1 in \cite{Wu2018}, the elements of $\Cov(\bfb)$ are calculated by 
 
 \begin{align}
-  \Cov\left(\hatbftheta\right)^{-1/2}\left(\hatbftheta - \bftheta_0\right) \rightarrow_d \mathcal{N}\left(\mathbf{0}, \mathbf{I}_2\right),
+  \begin{split}
+  \Var\left(\bfy ^\rmT \bfVKV \bfy \right)&=2\tr\left[ (\bfVKV \bfSig)^2\right],\\
+  \Var\left(\bfy ^\rmT \bfVy \right)&=2\tr\left[ (\bfV \bfSig)^2\right],\\
+  \Cov\left(\bfy^\rmT \bfVKV \bfy, \bfy^\rmT \bfVy \right)&=2\tr (\bfVKV \bfSig \bfV \bfSig).
+  \end{split} \nonumber
 \end{align}
 
-Then when $\hatbftheta = \bftheta_0$, the rejection region is:
+Since $\hat{\symbf{\sigma}}^2 - \bfsig_0$ is asymptotically normal and $\bfsig_0$ is the true value of $\bfsig$, that is:
 
 \begin{align}
-  \left(\hatbftheta - \bftheta_0\right)^\rmT \Cov\left(\hatbftheta\right)^{-1}\left(\hatbftheta - \bftheta_0\right) > \chi_{2,\alpha}^2.
+	\Cov\left(\hat{\symbf{\sigma}}^2\right)^{-1/2}\left(\hat{\symbf{\sigma}}^2 - \bfsig_0\right) \rightarrow_d \mathcal{N}\left(\mathbf{0}, \mathbf{I}_2\right),
+\end{align}
+
+Then when $\hat{\symbf{\sigma}}^2 - \bfsig_0$, the rejection region is:
+
+\begin{align}
+	\left(\hat{\symbf{\sigma}}^2 - \bfsig_0\right)^\rmT \Cov\left(\hat{\symbf{\sigma}}^2\right)^{-1}\left(\hat{\symbf{\sigma}}^2 - \bfsig_0\right) > \chi_{2,\alpha}^2.
 \end{align}
 
 ## Modification 2: Delta Method 
 
-Denote $\hat{h}^2=g\left(\hatbftheta\right)=\frac{\hatsigbeta}{\hatsigbeta+\hatsige}$, and the gradient matrix can be computed:
+Denote $\hat{h}^2=g\left(\hat{\symbf{\sigma}}^2\right)=\frac{\hatsigbeta}{\hatsigbeta+\hatsige}$, and the gradient matrix can be computed:
 
 \begin{align}
-  \tag{9}
-  \nabla g\left(\bftheta\right) = \left(\frac{\hatsige}{\left(\hatsigbeta+\hatsige\right)^2},\frac{-\hatsigbeta}{\left(\hatsigbeta+\hatsige\right)^2}\right)^\rmT.
-\end{align}
+	\nabla g\left(\hat{\symbf{\sigma}}^2\right) = \left(\frac{\hatsige}{\left(\hatsigbeta+\hatsige\right)^2},\frac{-\hatsigbeta}{\left(\hatsigbeta+\hatsige\right)^2}\right)^\rmT.
+	\end{align}
 
-Then, using the delta method, the variance of $\hat{h}^2$ is:
-
-\begin{align}
-  \tag{10}
-  \Cov \left(\hat{h}^2\right) = \nabla ^\rmT g\left(\bftheta\right) \Cov\left(\hatbftheta\right) \nabla g\left(\bftheta\right).
-\end{align}
-
-After the variance of $\hat{h}^2$ is obtained, using the delta theorem, we know that 
-$g(\bftheta)-g(\bftheta_0)$ is also asymptotically normal, that is:
+Then, using the **delta method**, the variance of $\hat{h}^2$ is:
 
 \begin{align}
-\Cov \left(\hat{h}^2\right)^{-1/2}\left(g\left(\bftheta\right)-g\left(\bftheta_0\right)\right) \rightarrow_d \mathcal{N}\left(0,1\right), 
-\end{align}
-and when $g\left(\bftheta\right)=g\left(\bftheta_0\right)$, the rejection region is:
+	\Var \left(\hat{h}^2\right) = \nabla ^\rmT g\left(\hat{\symbf{\sigma}}^2\right) \Cov\left(\hat{\symbf{\sigma}}^2\right) \nabla g\left(\hat{\symbf{\sigma}}^2\right).
+	\end{align}
+
+After the variance of $\hat{h}^2$ is obtained, using the **delta theorem**, we know that 
+$g(\hat{\symbf{\sigma}}^2)-g(\bfsig_0)$ is also **asymptotically normal**, that is:
 
 \begin{align}
-  \left(g\left(\bftheta\right)-g\left(\bftheta_0\right)\right)^\rmT \Cov \left(\hat{h}^2\right)^{-1}\left(g\left(\bftheta\right)-g\left(\bftheta_0\right)\right) > \chi_{1,\alpha}^2.
+	\Cov \left(\hat{h}^2\right)^{-1/2}\left(g\left(\hat{\symbf{\sigma}}^2\right)-g\left(\bfsig_0\right)\right) \rightarrow_d \mathcal{N}\left(0,1\right), 
 \end{align}
+and when $g\left(\hat{\symbf{\sigma}}^2\right)=g\left(\bfsig_0\right)$, the rejection region is:
 
-## Application
-
-
-## Input the data
-```{r cache = TRUE}
-mydata = read.table(file = "data/XYZ_MoM.txt",header = T)
-y = mydata$y
-Z = mydata[,2:31]
-X = mydata[,32:ncol(mydata)]
-```
-
-## MoM
-```{r cache = TRUE}
-result1 = LMM_MoM(y,X,Z,ifintercept=F,ifK2=T,B=100,seed=2023)
-thetahat = c(result1$sb2,result1$se2)
-S_thetahat = result1$cov_sigma2
-Atest(thetahat,c(0,0),S_thetahat)
-h2 = result1$h2
-cov_h2 = result1$cov_h2
-Atest(h2,0,cov_h2)
-
-```
+\begin{align}
+	\left(g\left(\hat{\symbf{\sigma}}^2\right)-g\left(\bfsig_0\right)\right)^\rmT \Cov \left(\hat{h}^2\right)^{-1}\left(g\left(\hat{\symbf{\sigma}}^2\right)-g\left(\bfsig_0\right)\right) > \chi_{1,\alpha}^2.
+\end{align}
 
 # MM Algorithm
 
+## Derivation
 Unlike the MoM, the minorization-maximization (MM) algorithm consider the likelihood of the variance components model directly. The log-likelihood function $\mathcal{L}(\bfy \mid \bfomega,\sigbeta,\sige;\bfZ,\bfK)$ is given as:
 
 \begin{align}
@@ -258,24 +245,24 @@ Unlike the MoM, the minorization-maximization (MM) algorithm consider the likeli
 where $\bfSig = \sigbeta \bfK+ \sige \mathbf{I}_n$. The MM algorithm is utilized to maximizing the log-likelihood function and such an algorithm follow from the inequalities:
 
 \begin{align}
-f\left(\bftheta^{(t+1)}\right) \geq g\left(\bftheta^{(t+1)} \mid \bftheta^{(t)}\right) \geq g\left(\bftheta^{(t)} \mid \bftheta^{(t)}\right)=f\left(\bftheta^{(t)}\right).
+f\left(\bftheta^{(t+1)}\right) \geq g\left(\bftheta^{(t+1)} \mid \bftheta^{(t)}\right) \geq g\left(\bftheta^{(t)} \mid \bftheta^{(t)}\right)=f\left(\bftheta^{(t)}\right),
 \end{align}
 
-Therefore, the key step of MM algorithm is to identify the surrogate function $g\left(\bftheta | \bftheta^{(t)}\right)$ by using proper inequalities.
+where $f\left(\bftheta\right) \geq g\left(\bftheta \mid \bftheta^{(t)}\right)$ and the equality holds true if and only if $\bftheta$ equals $\bftheta^{(t)}$. Therefore, the key step of MM algorithm is to identify the surrogate function $g\left(\bftheta | \bftheta^{(t)}\right)$ by using proper inequalities.
 
-The strategy for maximizing the log-likelihood is to alternate updating the fixed effects $\bfomega$ and the variance components $\bftheta = \left(\sigbeta,\sige\right)$. Updating $\bfomega$ is a standard general least-squares problem with solution
+The strategy for maximizing the log-likelihood is to alternate updating the fixed effects $\bfomega$ and the variance components $\bfsig = \left(\sigbeta,\sige\right)$. Updating $\bfomega$ is a standard general least-squares problem with solution
 
 \begin{align}
 \bfomega^{(t+1)} = \left(\bfZ^\rmT \bfSig^{-(t)} \bfZ\right)^{-1} \bfZ^\rmT\bfSig^{-(t)} \bfy,
 \end{align}
 where $\bfSig^{-(t)} = \sigbetat \bfK+ \siget \mathbf{I}_n$.
 
-Then, Updating $\bftheta$ given $\bfomega^{(t)}$ depends on two minorizations.
+Then, Updating $\bfsig$ given $\bfomega^{(t)}$ depends on two minorizations.
 
 First, using the **joint convexity** of $\bfSig^{(t)}\bfSig^{-1}\bfSig^{(t)}$,
 
 \begin{align}
--(\bfy-\bfZ\bfomega)^{\rmT}\bfSig(\bfy-\bfZ\bfomega) \geq 
+-(\bfy-\bfZ\bfomega)^{\rmT}\bfSig^{-1}(\bfy-\bfZ\bfomega) \geq 
 -(\bfy-\bfZ\bfomega)^{\rmT}\bfSig^{-(t)}\left(\frac{\sigbetatt}{\sigbeta}\bfK+\frac{\sigett}{\sige}\right)\bfSig^{-(t)}(\bfy-\bfZ\bfomega).
 \end{align}
 
@@ -288,25 +275,27 @@ Second, using the **supporting hyperplane**,
 Combining of the minorizations gives the overall minorization:
 
 \begin{align}
-&g\left(\bftheta | \bftheta^{(t)}\right) \\=& -\half\tr\left(\bfSig^{-(t)}\bfSig\right) - \half(\bfy-\bfZ\bfomega^{(t)})^{\rmT}\bfSig^{-(t)}\left(\frac{\sigbetatt}{\sigbeta}\bfK+\frac{\sigett}{\sige}\right)\bfSig^{-(t)}(\bfy-\bfZ\bfomega^{(t)}) + c^{(t)} \\ =& -\frac{\sigbeta}{2}\tr\left(\bfSig^{-(t)}\bfK\right) - \half\frac{\sigbetatt}{\sigbeta}(\bfy-\bfZ\bfomega^{(t)})^{\rmT}\bfSig^{-(t)}\bfK\bfSig^{-(t)}(\bfy-\bfZ\bfomega^{(t)}) \\
+\begin{split}
+&g\left(\bfsig\mid\bfsigt\right) \\=& -\half\tr\left(\bfSig^{-(t)}\bfSig\right) - \half(\bfy-\bfZ\bfomega^{(t)})^{\rmT}\bfSig^{-(t)}\left(\frac{\sigbetatt}{\sigbeta}\bfK+\frac{\sigett}{\sige}\right)\bfSig^{-(t)}(\bfy-\bfZ\bfomega^{(t)}) + c^{(t)} \\ =& -\frac{\sigbeta}{2}\tr\left(\bfSig^{-(t)}\bfK\right) - \half\frac{\sigbetatt}{\sigbeta}(\bfy-\bfZ\bfomega^{(t)})^{\rmT}\bfSig^{-(t)}\bfK\bfSig^{-(t)}(\bfy-\bfZ\bfomega^{(t)}) \\
 & -\frac{\sige}{2}\tr\left(\bfSig^{-(t)}\right)-\half\frac{\sigett}{\sige}(\bfy-\bfZ\bfomega^{(t)})^{\rmT}\bfSig^{-2(t)}(\bfy-\bfZ\bfomega^{(t)})+c^{(t)},
+\end{split}
 \end{align}
 
-where $c^{(t)}$ is an irrelevant constant. By setting that $\frac{\partial g\left(\bftheta | \bftheta^{(t)}\right)}{\partial\sigbeta}=0$ and $\frac{\partial g\left(\bftheta | \bftheta^{(t)}\right)}{\partial\sige}=0$, the updates of $\bftheta$ are given as follows:
+where $c^{(t)}$ is an irrelevant constant. By setting that $\frac{\partial g\left(\bfsig\mid\bfsigt\right)}{\partial\sigbeta}=0$ and $\frac{\partial g\left(\bfsig\mid\bfsigt\right)}{\partial\sige}=0$, the updates of $\bfsig$ are given as follows:
 
 \begin{align}
-&\sigma_\beta^{2(t+1)}=\sigbetat\sqrt{\frac{(\bfy-\bfZ\bfomega^{(t)})^{\rmT}\bfSig^{-(t)}\bfK\bfSig^{(-t)}(\bfy-\bfZ\bfomega^{(t)})}{\tr\left(\bfSig^{-(t)}\bfK\right) }},\\
+  &\sigma_\beta^{2(t+1)}=\sigbetat\sqrt{\frac{(\bfy-\bfZ\bfomega^{(t)})^{\rmT}\bfSig^{-(t)}\bfK\bfSig^{(-t)}(\bfy-\bfZ\bfomega^{(t)})}{\tr\left(\bfSig^{-(t)}\bfK\right) }},\\
 &\sigma_e^{2(t+1)}=\siget\sqrt{\frac{(\bfy-\bfZ\bfomega^{(t)})^{\rmT}\bfSig^{-2(t)}(\bfy-\bfZ\bfomega^{(t)})}{\tr\left(\bfSig^{-(t)}\right) }}.
 \end{align}
 
-Since the major computational cost this algorithm is inversion of the covariance matrix $\bfSig$ at each iteration. Eigenvalue decomposition can be conduct to boost the efficiency.
-
-Using the fact that $\bfK$ is a real symmetric matrix, we can get $\bfK = \bfU\bfD\bfU^{\rmT}$. Since $\bfU\bfU^{\rmT}=\bfI$, the covariance matrix $\bfSig$ is given as:
+Since the major computational cost this algorithm is inversion of the covariance matrix $\bfSig$ at each iteration. **Eigenvalue decomposition** can be conduct to boost the efficiency. Using the fact that $\bfK$ is a real symmetric matrix, we can get $\bfK = \bfU\bfD\bfU^{\rmT}$. Since $\bfU\bfU^{\rmT}=\bfI$, the covariance matrix $\bfSig$ is given as:
 
 \begin{align}
+\begin{split}
 \bfSig =& \sigbeta\bfU\bfD\bfU^{\rmT}+\sige\bfI \\
 =&  \sigbeta\bfU\bfD\bfU^{\rmT}+\sige\bfU\bfU^{\rmT} \\
-=&  \bfU\left(\sigbeta\bfD+\sige\bfI\right)\bfU^{\rmT},
+=&  \bfU\left(\sigbeta\bfD+\sige\bfI\right)\bfU^{\rmT}.
+\end{split}
 \end{align}
 
 Hence, the inversion of the covariance matrix $\bfSig$ is:
@@ -315,49 +304,80 @@ Hence, the inversion of the covariance matrix $\bfSig$ is:
 \bfSig^{-1} = \bfU\left(\sigbeta\bfD+\sige\bfI\right)^{-1}\bfU^{\rmT}.
 \end{align}
 
-With the revised responses $\$
+When $\bfK = \bfU\bfD\bfU^{\rmT}$, the responses $\bfy$ should be transformed into $\bfU^{\rmT}\bfy$ and $\bfZ$ should be transformed into $\bfU^{\rmT}\bfZ$.
 
-## The covariance matrix of $\hatbftheta$
+<!-- \begin{algorithm} -->
+<!-- \caption{MM algorithm with Eigenvalue decomposition for model (2)} -->
+<!-- \begin{algorithmic} -->
+<!-- \STATE {Transform data: $\bfK=\bfU\bfD\bfU^T$, $\tibfZ \leftarrow \bfU^{\rmT}\bfZ$, $\tibfy \leftarrow \bfU^{\rmT}\bfy$} -->
+<!-- \STATE {Initialization: $\bfomega=(\tibfZ^{\rmT}\tibfZ)^{-1}\tibfZ^{\rmT}\tibfy$, $\sigbeta=\sige=\Var(y-\bfZ\bfomega)/2$} -->
+<!-- \REPEAT -->
+<!-- \STATE -->
+<!-- \begin{align} -->
+<!--   \begin{split} -->
+<!--   \tibfDt &= \left(\sigbetat\bfD+\siget\bfI\right)^{-1},\\ -->
+<!--   \bfomega^{(t+1)} &= \left(\tibfZ^\rmT \tibfDt \tibfZ\right)^{-1} \tibfZ^\rmT\tibfDt \tibfy,\\ -->
+<!--   \sigma_\beta^{2(t+1)} &=\sigbetat\sqrt{\frac{(\tibfy-\tibfZ\bfomega^{(t)})^{\rmT}\tibfDt\bfD\tibfDt(\tibfy-\tibfZ\bfomega^{(t)})}{\tr\left(\tibfDt\bfD\right) }},\\ -->
+<!--   \sigma_e^{2(t+1)}&=\siget\sqrt{\frac{(\tibfy-\tibfZ\bfomega^{(t)})^{\rmT}{\tilde{\bfD^{-2(t)}}}\tibfDt(\tibfy-\tibfZ\bfomega^{(t)})}{\tr\left(\tibfDt\right)}},\\ -->
+<!--   \mathcal{L}^{(t+1)} &= -\half\log\det\tibfDt -\half\left(\tibfy-\tibfZ\bfomega^{(t+1)}\right)^{\rmT}\tibfDt\left(\tibfy-\tibfZ\bfomega^{(t+1)}\right). -->
+<!--   \end{split}\nonumber -->
+<!-- \end{align} -->
+<!-- \UNTIL{the incomplete-data log-likelihood ($\mathcal{L}^{(t+1)}$) stop increasing or maximum iteration reached} -->
+<!-- \end{algorithmic} -->
+<!-- \end{algorithm} -->
 
-The covariance matrix of $\hatbftheta$ can be calculated from the inverse of Fisher Information Matrix (FIM). Hence, the first step is to obtain FIM, that is 
+
+## The inverse of Fisher Information Matrix
+
+The covariance matrix of $\hat{\symbf{\sigma}}^2$ can be calculated from the inverse of Fisher Information Matrix (FIM). Hence, the first step is to obtain FIM, that is 
 
 \begin{align}
 \operatorname{FIM} = -\mathbb{E}\left[\frac{\partial^2\mathcal{L}}{\partial\bftheta^2}\right].
 \end{align}
 
-The first derivatives are:
+The **first derivatives** are:
 \begin{align}
-&\frac{\partial\mathcal{L}}{\partial\sigbeta}=\half\tr\left[-\bfSig^{-1}\bfK +(\bfy-\bfZ\bfomega)^{\rmT}\bfSig^{-1}\bfK\bfSig^{-1}(\bfy-\bfZ\bfomega) \right],\\
-&\frac{\partial\mathcal{L}}{\partial\sige}=\half\tr\left[-\bfSig^{-1} +(\bfy-\bfZ\bfomega)^{\rmT}\bfSig^{-2}(\bfy-\bfZ\bfomega) \right].
+\begin{split}
+\frac{\partial\mathcal{L}}{\partial\sigbeta}&=\half\tr\left[-\bfSig^{-1}\bfK +(\bfy-\bfZ\bfomega)^{\rmT}\bfSig^{-1}\bfK\bfSig^{-1}(\bfy-\bfZ\bfomega) \right],\\
+\frac{\partial\mathcal{L}}{\partial\sige}&=\half\tr\left[-\bfSig^{-1} +(\bfy-\bfZ\bfomega)^{\rmT}\bfSig^{-2}(\bfy-\bfZ\bfomega) \right].
+\end{split}\nonumber
 \end{align}
-And the second derivatives are:
+And **the second derivatives** are:
 
 \begin{align}
 \begin{split}
-&\frac{\partial^2\mathcal{L}}{\partial{\left(\sigbeta\right)^2}} = \half\tr\left[\left(\bfSig^{-1}\bfK\right)^2-2\left(\bfSig^{-1}\bfK\right)^2\bfSig^{-1}(\bfy-\bfZ\bfomega)(\bfy-\bfZ\bfomega)^{\rmT}\right],\\
-&\frac{\partial^2\mathcal{L}}{\partial{\left(\sige\right)^2}} =\half\tr\left[\bfSig^{-2}-2\bfSig^{-3}(\bfy-\bfZ\bfomega)(\bfy-\bfZ\bfomega)^{\rmT}\right],\\
-&\frac{\partial^2\mathcal{L}}{\partial{\sigbeta}\partial{\sige}} =  \half\tr\left[\bfSig^{-1}\bfK\bfSig^{-1}-\left(\bfSig^{-1}\bfK\bfSig^{-2} +\bfSig^{-2}\bfK\bfSig^{-1} \right)(\bfy-\bfZ\bfomega)(\bfy-\bfZ\bfomega)^{\rmT}\right].
+\frac{\partial^2\mathcal{L}}{\partial{\left(\sigbeta\right)^2}} &= \half\tr\left[\left(\bfSig^{-1}\bfK\right)^2-2\left(\bfSig^{-1}\bfK\right)^2\bfSig^{-1}(\bfy-\bfZ\bfomega)(\bfy-\bfZ\bfomega)^{\rmT}\right],\\
+\frac{\partial^2\mathcal{L}}{\partial{\left(\sige\right)^2}} &=\half\tr\left[\bfSig^{-2}-2\bfSig^{-3}(\bfy-\bfZ\bfomega)(\bfy-\bfZ\bfomega)^{\rmT}\right],\\
+\frac{\partial^2\mathcal{L}}{\partial{\sigbeta}\partial{\sige}} &=  \half\tr\left[\bfSig^{-1}\bfK\bfSig^{-1}-\left(\bfSig^{-1}\bfK\bfSig^{-2} +\bfSig^{-2}\bfK\bfSig^{-1} \right)(\bfy-\bfZ\bfomega)(\bfy-\bfZ\bfomega)^{\rmT}\right].
 \end{split}\nonumber
 \end{align}
 
 Since $\mathbb{E}\left[(\bfy-\bfZ\bfomega)(\bfy-\bfZ\bfomega)^{\rmT}\right]=\bfSig$, the FIM is:
 
 \begin{align}
+\begin{split}
 \operatorname{FIM} =& -\mathbb{E}\left[\frac{\partial^2\mathcal{L}}{\partial\bftheta^2}\right]\\
 =& \half \left[\begin{array}{cc}
 \tr\left[\left(\bfSig^{-1} \bfK\right)^2\right] & \tr\left(\bfSig^{-2}\bfK \bf\right) \\
 \tr\left(\bfSig^{-2}\bfK \bf\right)  & \tr\left[\bfSig^{-2}\right]
 \end{array}\right].
+\end{split}
 \end{align}
 
-Therefore, the covariance matrix of $\hatbftheta$ is the inverse of FIM.
+Therefore, the covariance matrix of $\hat{\symbf{\sigma}}^2$ is the inverse of FIM.
 
-## Including Plots
+\begin{thebibliography}{77}     
 
-You can also embed plots, for example:
+\small       
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
+\bibitem{Wu2018} Wu, Y., \& Sankararaman, S. (2018). A scalable estimator of SNP heritability for biobank-scale data. \textit{Bioinformatics}, 34(13), i187-i194.
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+\bibitem{Zhou2018} Zhou, H., Hu, L., Zhou, J., \& Lange, K. (2018). MM algorithms for variance components models. \textit{Journal of Computational and Graphical Statistics}, 28(2), 350-361.
+
+\bibitem{Freedman2006} Freedman, D. A. (2006). On the so-called "Huber sandwich estimator" and "robust standard errors". \textit{The American Statistician}, 60(4), 299-302.
+
+\bibitem{Zhounotes} Zhou, C. Lecture Notes on Asymptotic Statistics.
+
+\bibitem{Wunotes} Wu, H. MM Algorithm.
+
+\end{thebibliography}    

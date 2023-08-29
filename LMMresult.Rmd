@@ -1,0 +1,127 @@
+---
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_dir ="docs") })
+
+title: "Results"
+author: "Wu Yida"
+date: "`r Sys.Date()`"
+CJKmainfont: SimSun
+output:
+  beamer_presentation:
+    includes:
+      header-includes:
+        - \usepackage{xeCJK}
+        - \usepackage{amsmath}
+        - \usepackage{listings}
+        - \usepackage{amsfonts}
+        - \usepackage{amssymb}
+        - \usepackage{algorithm}
+        - \usepackage{algorithmic}
+    latex_engine: xelatex
+    theme: "CambridgeUS"
+    colortheme: "seahorse"
+    fonttheme: "structurebold"
+---
+
+
+```{r setup,echo=FALSE,warning=FALSE,message=FALSE}
+knitr::opts_chunk$set(
+	echo = FALSE,
+	fig.align = "center",
+	fig.show = "asis",
+	message = FALSE,
+	warning = FALSE,
+	out.width = "60%"
+)
+source("R/LMM_MoM.R")
+source("R/LMM_MM.R")
+source("R/Atest.R")
+```
+
+## Application
+
+### Input and display the data
+```{r cache = TRUE}
+mydata = read.table(file = "data/XYZ_MoM.txt",header = T)
+y = mydata$y
+Z = mydata[,2:31]
+X = mydata[,32:ncol(mydata)]
+```
+
+### MoM
+```{r cache = TRUE}
+init = Sys.time()
+result1 = LMM_MoM(y,X,Z,ifintercept=F,ifK2=T,B=100,seed=2023)
+Sys.time() - init
+print(paste("sb2 is ",round(result1$sb2,3)))
+print(paste("se2 is ",round(result1$se2,3)))
+print("omega is ")
+round(result1$omega,3)
+
+# init = Sys.time()
+# result1 = LMM_MoM(y,X,Z,ifintercept=F,ifK2=F,B=100,seed=2023)
+# Sys.time() - init
+# print(paste("sb2 is ",round(result1$sb2,3)))
+# print(paste("se2 is ",round(result1$se2,3)))
+# print("omega is ")
+# round(result1$omega,3)
+```
+
+```{r cache = TRUE}
+thetahat = c(result1$sb2,result1$se2)
+S_thetahat = result1$cov_sig2
+print("The covariance matrix is")
+round(S_thetahat,3)
+pvalue = Atest(thetahat,c(0,0),S_thetahat)
+print(paste("The pvalue is ",pvalue))
+```
+
+
+```{r cache = TRUE}
+h2 = result1$h2
+cov_h2 = result1$cov_h2
+print(paste("The h2 is ",round(h2,3)))
+print(paste("The variance is ",round(cov_h2,3)))
+Atest(h2,0,cov_h2)
+print(paste("The pvalue is ",pvalue))
+```
+
+### MM
+
+```{r cache = TRUE}
+init = Sys.time()
+result2 = LMM_MM(y,X,Z,maxiter=500,tol=1e-6,sb2=NULL,se2=NULL,ifintercept=F,ifed=T,ifmargi=F)
+Sys.time() - init
+print(paste("sb2 is",round(result2$sb2,3)))
+print(paste("se2 is",round(result2$se2,3)))
+print("omega is")
+round(result2$omega,3)
+```
+
+
+```{r cache = TRUE}
+print("The covariance matrix is")
+round(result2$cov_sig2,3)
+thetahat = c(result2$sb2,result2$se2)
+S_thetahat = result2$cov_sig2
+pvalue = Atest(thetahat,c(0,0),S_thetahat)
+print(paste("The pvalue is ",pvalue))
+```
+
+
+```{r cache = TRUE}
+h2 = result2$h2
+cov_h2 = result2$cov_h2
+print(paste("The h2 is ",round(h2,3)))
+print(paste("The variance is ",round(cov_h2,3)))
+Atest(h2,0,cov_h2)
+print(paste("The pvalue is ",pvalue))
+```
+
+```{r cache = TRUE}
+result3 = LMM_MM(y,X,Z,maxiter=500,tol=1e-6,sb2=NULL,se2=NULL,ifintercept=F,ifed=T,ifmargi=T)
+allL = result3$allL
+pdf(file = "./pic/margiplot.pdf",width = 6,height = 4)
+plot(x = 1:length(allL),y = allL,xlab="Iters",ylab="The marginal likelihood")
+dev.off()
+```

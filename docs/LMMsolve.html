@@ -12,7 +12,7 @@
 
 <meta name="author" content="Yida Wu" />
 
-<meta name="date" content="2023-08-27" />
+<meta name="date" content="2023-08-28" />
 
 <title>Method of Moments and MM Algorithm</title>
 
@@ -60,7 +60,7 @@ code span.ot { color: #007020; }
 <div class="inner">
 <h1 class="title toc-ignore">Method of Moments and MM Algorithm</h1>
 <h3 class="author">Yida Wu</h3>
-<h3 class="date">2023-08-27</h3>
+<h3 class="date">2023-08-28</h3>
 </div>
 </header>
 
@@ -77,17 +77,11 @@ Mixed Model</a></li>
 Estimator</a></li>
 <li><a href="#modification-2-delta-method" id="toc-modification-2-delta-method">Modification 2: Delta
 Method</a></li>
-<li><a href="#application" id="toc-application">Application</a></li>
-<li><a href="#input-the-data" id="toc-input-the-data">Input the
-data</a></li>
-<li><a href="#mom" id="toc-mom">MoM</a></li>
 </ul></li>
 <li><a href="#mm-algorithm" id="toc-mm-algorithm">MM Algorithm</a>
 <ul>
-<li><a href="#the-covariance-matrix-of-boldsymboltheta" id="toc-the-covariance-matrix-of-boldsymboltheta">The covariance matrix
-of <span class="math inline">\(\boldsymbol{\theta}\)</span></a></li>
-<li><a href="#including-plots" id="toc-including-plots">Including
-Plots</a></li>
+<li><a href="#the-covariance-matrix-of-hatboldsymboltheta" id="toc-the-covariance-matrix-of-hatboldsymboltheta">The covariance
+matrix of <span class="math inline">\(\hat{\boldsymbol{\theta}}\)</span></a></li>
 </ul></li>
 </ul>
 </div>
@@ -96,19 +90,16 @@ Plots</a></li>
 <div id="content-wrapper">
   <div class="inner clearfix">
     <section id="main-content">
-<blockquote>
-<p>Linear mixed models (LMMs) have emerged as a key tool for
+<p><strong><em>Linear mixed models (LMMs) have emerged as a key tool for
 heritability estimation where the parameters of the LMMs, i.e. the
 variance components, are related to the heritability attributable to the
-SNPs analyzed.</p>
-</blockquote>
+SNPs analyzed.</em></strong></p>
 <div id="linear-mixed-model" class="section level1">
 <h1>Linear Mixed Model</h1>
 <p>The linear mixed model builds upon a linear relationship from <span class="math inline">\(\mathbf{y}\)</span> to <span class="math inline">\(\mathbf{X}\)</span> and <span class="math inline">\(\mathbf{Z}\)</span> by</p>
-<p><span class="math display">\[\begin{equation}
-  \tag{1}
+<p><span class="math display">\[\begin{align}
   \mathbf{y}=\mathbf{Z}\boldsymbol{\omega}+\mathbf{X}\boldsymbol{\beta}+\mathbf{e}.
-\end{equation}\]</span></p>
+\end{align}\]</span></p>
 <ul>
 <li><span class="math inline">\(\mathbf{y}\in \mathbb{R}^n\)</span>,
 <span class="math inline">\(\mathbf{y}\)</span> is centered so that
@@ -128,13 +119,12 @@ term.</li>
 </ul>
 <p>Note that the linear mixed model (1) can be re-written as:</p>
 <p><span class="math display">\[\begin{align}
-\tag{2}
 \mathbf{y}\sim
 \mathcal{N}\left(\mathbf{Z}\boldsymbol{\omega},\boldsymbol{\Sigma}\right),
 \end{align}\]</span></p>
 <p>where <span class="math inline">\(\boldsymbol{\Sigma}=
 \sigma_\beta^2\mathbf{K}+ \sigma_e^2\mathbf{I}_n\)</span> and <span class="math inline">\(\mathbf{K}=\mathbf{X}\mathbf{X}^\mathrm{T}\)</span>.
-The main target is to estimate the set of unknown parameters <span class="math inline">\(\mathbf{\Theta}=\left\{\boldsymbol{\omega},
+The first target is to estimate the set of unknown parameters <span class="math inline">\(\mathbf{\Theta}=\left\{\boldsymbol{\omega},
 \sigma_\beta^2, \sigma_e^2\right\}\)</span>. We will derive and
 implement two methods (MoM and MM) in this project.</p>
 </div>
@@ -147,61 +137,60 @@ obtain estimates of the model parameters such that the theoretical
 moments match the sample moments.</p>
 <p>First, Equation (1) is transformed by multiplying by the projection
 matrix <span class="math inline">\(\mathbf{V}=\mathbf{I}_n-\mathbf{Z}\left(\mathbf{Z}^T
-\mathbf{Z}\right)^{-1} \mathbf{Z}^T\)</span> (Note that <span class="math inline">\(\mathbf{V}^{\mathrm{T}}=\mathbf{V}\)</span> and
+\mathbf{Z}\right)^{-1} \mathbf{Z}^T\)</span> (<span class="math inline">\(\mathbf{V}^{\mathrm{T}}=\mathbf{V}\)</span> and
 <span class="math inline">\(\mathbf{V}^{\mathrm{T}}\mathbf{V}=\mathbf{V}\)</span>)
 :</p>
-<p><span class="math display">\[\begin{equation}
-  \tag{3}
+<p><span class="math display">\[\begin{align}
   \mathbf{Vy}=\mathbf{VX} \boldsymbol{\beta}+\mathbf{Ve}.
-\end{equation}\]</span></p>
-<p>From Equation (2), the first theoretical moment and the second
+\end{align}\]</span></p>
+<p>From Equation (3), the first theoretical moment and the second
 theoretical moment can be derived. <span class="math inline">\(\mathbb{E}\left[\mathbf{Vy}\right]=\mathbf{0}\)</span>
 while the population covariance of the vector <span class="math inline">\(\mathbf{Vy}\)</span> is: <span class="math display">\[\begin{align}
-  \tag{4}
   \operatorname{Cov}\left(\mathbf{Vy}\right) &amp;=
 \mathbb{E}\left[\mathbf{Vy}\mathbf{y}^\mathrm{T}\mathbf{V}\right] -
 \mathbb{E}\left[\mathbf{Vy}\right]
 \mathbb{E}\left[\mathbf{Vy}\right]^{\mathrm{T}}\\ &amp;=
 \sigma_\beta^2\mathbf{VKV} + \sigma_e^2\mathbf{V}.
 \end{align}\]</span></p>
-<p>Next, the MoM estimator is obtained by solving the following ordinary
-least squares (OLS) problem:</p>
+<p>Next, the MoM estimator is obtained by solving the following
+<strong>ordinary least squares (OLS) problem</strong>:</p>
 <p><span class="math display">\[\begin{align}
-  \tag{5}
   \left(\hat{\sigma_\beta^2}, \hat{\sigma_e^2}\right) =
 \operatorname{argmin}_{\sigma_\beta^2, \sigma_e^2}
-\left\|(\mathbf{Vy})(\mathbf{Vy})^\mathrm{T}-\left(\sigma_\beta^2\mathbf{V}\mathbf{K}\mathbf{V}+\sigma_e^2\mathbf{V}\right)\right\|_F^2,
+\left\|(\mathbf{Vy})(\mathbf{Vy})^\mathrm{T}-\left(\sigma_\beta^2\mathbf{V}\mathbf{K}\mathbf{V}+\sigma_e^2\mathbf{V}\right)\right\|_F^2.
 \end{align}\]</span></p>
 <p>Due to the fact that <span class="math inline">\(\|\mathbf{A}\|_F=\sqrt{\operatorname{tr}\left(\mathbf{A}\mathbf{A}^T\right)}\)</span>,
 the OLS problem can be re-written as:</p>
 <p><span class="math display">\[\begin{align}
-  \tag{6}
   \left(\hat{\sigma_\beta^2}, \hat{\sigma_e^2}\right)=
 \operatorname{argmin}_{\sigma_\beta^2, \sigma_e^2}
 \operatorname{tr}\left[\left((\mathbf{Vy})(\mathbf{Vy})^\mathrm{T}-\left(\sigma_\beta^2\mathbf{VKV}+\sigma_e^2\mathbf{V}\right)\right)\left((\mathbf{Vy})(\mathbf{Vy})^\mathrm{T}-\left(\sigma_\beta^2\mathbf{VKV}+\sigma_e^2\mathbf{V}\right)\right)^\mathrm{T}\right].
 \end{align}\]</span></p>
 <p>Then, the MoM estimator satisfies the normal equations:</p>
 <p><span class="math display">\[\begin{align}
-  \tag{7}
   \mathbf{A}\hat{\boldsymbol{\theta}}=\mathbf{b},
 \end{align}\]</span></p>
-<p>where <span class="math display">\[\mathbf{A}=\left[\begin{array}{ll}
+<p>where <span class="math display">\[\begin{align}
+  \begin{split}
+  \mathbf{A}&amp;=\left[\begin{array}{ll}
 \operatorname{tr}\left(\mathbf{VKVK}\right) &amp;
 \operatorname{tr}\left(\mathbf{VK}\right) \\
 \operatorname{tr}\left(\mathbf{VK}\right) &amp; n-c
-\end{array}\right],\]</span></p>
-<p><span class="math display">\[\hat{\boldsymbol{\theta}}=\left[\begin{array}{l}
+\end{array}\right],\\
+  \hat{\boldsymbol{\theta}}&amp;=\left[\begin{array}{l}
 \hat{\sigma_\beta^2}\\
 \hat{\sigma_e^2}
-\end{array}\right],\]</span></p>
-<p><span class="math display">\[\mathbf{b}=\left[\begin{array}{l}
+\end{array}\right],\\
+  \mathbf{b}&amp;=\left[\begin{array}{l}
 \mathbf{y}^{\mathrm{T}} \mathbf{VKV}\mathbf{y}\\
 \mathbf{y}^{\mathrm{T}} \mathbf{Vy}
-\end{array}\right].\]</span></p>
+\end{array}\right].
+  \end{split}
+\end{align}\]</span></p>
 <p>Hence, the MoM estimates of <span class="math inline">\(\boldsymbol{\theta}\)</span> is <span class="math inline">\(\hat{\boldsymbol{\theta}}=\mathbf{A}^{-1}\mathbf{b}\)</span>.
 Once the <span class="math inline">\(\hat{\boldsymbol{\theta}}\)</span>
-is obtained, estimating the vector of fixed effects <span class="math inline">\(\boldsymbol{\omega}\)</span> is a standard general
-least-squares problem, that is:</p>
+is obtained, estimating the vector of fixed effects <span class="math inline">\(\boldsymbol{\omega}\)</span> is a <strong>standard
+general least-squares problem</strong>, that is:</p>
 <p><span class="math display">\[\begin{align}
 \hat{\boldsymbol{\omega}} =
 \left(\mathbf{Z}^\mathrm{T}\hat{\boldsymbol{\Sigma}}^{-1}
@@ -210,6 +199,15 @@ least-squares problem, that is:</p>
 \end{align}\]</span> where <span class="math inline">\(\hat{\boldsymbol{\Sigma}} =
 \hat{\sigma_\beta^2}\mathbf{K}+
 \hat{\sigma_e^2}\mathbf{I}_n\)</span>.</p>
+<p>The one remaining quantity that we need to compute efficiently is
+<span class="math inline">\(\operatorname{tr}(\mathbf{VKVK})\)</span>.
+Since <span class="math inline">\(\mathbf{VK}\)</span> is a symmetric
+matrix, we can use <span class="math inline">\(\left\|
+\mathbf{VK}\right\|_F^2\)</span> to replace <span class="math inline">\(\operatorname{tr}(\mathbf{VKVK})\)</span>, which
+can compute efficiently. Another method is using a randomized estimator
+<span class="math inline">\(L_B\)</span>, which is the unbiased
+estimator of the trace of <span class="math inline">\(\mathbf{VKVK}\)</span> given <span class="math inline">\(B\)</span> random vectors, <span class="math inline">\(z_1,\dots,z_B\)</span>, drawn independently from a
+standard normal distribution.</p>
 </div>
 <div id="modification-1-sandwich-estimator" class="section level2">
 <h2>Modification 1: Sandwich Estimator</h2>
@@ -217,7 +215,6 @@ least-squares problem, that is:</p>
 the sandwich estimator: <span class="math inline">\(\operatorname{Cov}\left(\hat{\boldsymbol{\theta}}\right)=\mathbf{A}^{-1}\operatorname{Cov}\left(\mathbf{b}\right)\mathbf{A}^{-1}\)</span>,
 where</p>
 <p><span class="math display">\[\begin{align}
-  \tag{8}
   \operatorname{Cov}(\mathbf{b})=\operatorname{Cov}\left(\left[\begin{array}{c}
 \mathbf{y}^\mathrm{T}\mathbf{VKV}\mathbf{y}\\
 \mathbf{y}^\mathrm{T}\mathbf{Vy}
@@ -232,10 +229,17 @@ where</p>
 \end{array}\right],
 \end{align}\]</span></p>
 <p>Using the Lemma 1, the elements of <span class="math inline">\(\operatorname{Cov}(\mathbf{b})\)</span> are
-calculated by <span class="math inline">\(\operatorname{Var}\left(\mathbf{y}^\mathrm{T}\mathbf{VKV}\mathbf{y}\right)=2\operatorname{tr}\left[
-(\mathbf{VKV}\boldsymbol{\Sigma})^2\right]\)</span>, <span class="math inline">\(\operatorname{Var}\left(\mathbf{y}^\mathrm{T}\mathbf{Vy}\right)=2\operatorname{tr}\left[
-(\mathbf{V}\boldsymbol{\Sigma})^2\right]\)</span>, <span class="math inline">\(\operatorname{Cov}\left(\mathbf{y}^\mathrm{T}\mathbf{VKV}\mathbf{y},
-\mathbf{y}^\mathrm{T}\mathbf{Vy}\right)=2\operatorname{tr}(\mathbf{VKV}\boldsymbol{\Sigma}\mathbf{V}\boldsymbol{\Sigma})\)</span>.</p>
+calculated by</p>
+<p><span class="math display">\[\begin{align}
+  \begin{split}
+  \operatorname{Var}\left(\mathbf{y}^\mathrm{T}\mathbf{VKV}\mathbf{y}\right)&amp;=2\operatorname{tr}\left[
+(\mathbf{VKV}\boldsymbol{\Sigma})^2\right],\\
+  \operatorname{Var}\left(\mathbf{y}^\mathrm{T}\mathbf{Vy}\right)&amp;=2\operatorname{tr}\left[
+(\mathbf{V}\boldsymbol{\Sigma})^2\right],\\
+  \operatorname{Cov}\left(\mathbf{y}^\mathrm{T}\mathbf{VKV}\mathbf{y},
+\mathbf{y}^\mathrm{T}\mathbf{Vy}\right)&amp;=2\operatorname{tr}(\mathbf{VKV}\boldsymbol{\Sigma}\mathbf{V}\boldsymbol{\Sigma}).
+  \end{split} \nonumber
+\end{align}\]</span></p>
 <p>Since <span class="math inline">\(\hat{\boldsymbol{\theta}}-
 \boldsymbol{\theta}_0\)</span> is asymptotically normal and <span class="math inline">\(\boldsymbol{\theta}_0\)</span> is the true value
 of <span class="math inline">\(\boldsymbol{\theta}\)</span>, that
@@ -258,21 +262,20 @@ is:</p>
 <p>Denote <span class="math inline">\(\hat{h}^2=g\left(\hat{\boldsymbol{\theta}}\right)=\frac{\hat{\sigma_\beta^2}}{\hat{\sigma_\beta^2}+\hat{\sigma_e^2}}\)</span>,
 and the gradient matrix can be computed:</p>
 <p><span class="math display">\[\begin{align}
-  \tag{9}
   \nabla g\left(\boldsymbol{\theta}\right) =
 \left(\frac{\hat{\sigma_e^2}}{\left(\hat{\sigma_\beta^2}+\hat{\sigma_e^2}\right)^2},\frac{-\hat{\sigma_\beta^2}}{\left(\hat{\sigma_\beta^2}+\hat{\sigma_e^2}\right)^2}\right)^\mathrm{T}.
 \end{align}\]</span></p>
-<p>Then, using the delta method, the variance of <span class="math inline">\(\hat{h}^2\)</span> is:</p>
+<p>Then, using the <strong>delta method</strong>, the variance of <span class="math inline">\(\hat{h}^2\)</span> is:</p>
 <p><span class="math display">\[\begin{align}
-  \tag{10}
   \operatorname{Cov}\left(\hat{h}^2\right) = \nabla
 ^\mathrm{T}g\left(\boldsymbol{\theta}\right)
 \operatorname{Cov}\left(\hat{\boldsymbol{\theta}}\right) \nabla
 g\left(\boldsymbol{\theta}\right).
 \end{align}\]</span></p>
 <p>After the variance of <span class="math inline">\(\hat{h}^2\)</span>
-is obtained, using the delta theorem, we know that <span class="math inline">\(g(\boldsymbol{\theta})-g(\boldsymbol{\theta}_0)\)</span>
-is also asymptotically normal, that is:</p>
+is obtained, using the <strong>delta theorem</strong>, we know that
+<span class="math inline">\(g(\boldsymbol{\theta})-g(\boldsymbol{\theta}_0)\)</span>
+is also <strong>asymptotically normal</strong>, that is:</p>
 <p><span class="math display">\[\begin{align}
 \operatorname{Cov}\left(\hat{h}^2\right)^{-1/2}\left(g\left(\boldsymbol{\theta}\right)-g\left(\boldsymbol{\theta}_0\right)\right)
 \rightarrow_d \mathcal{N}\left(0,1\right),
@@ -282,17 +285,6 @@ the rejection region is:</p>
   \left(g\left(\boldsymbol{\theta}\right)-g\left(\boldsymbol{\theta}_0\right)\right)^\mathrm{T}\operatorname{Cov}\left(\hat{h}^2\right)^{-1}\left(g\left(\boldsymbol{\theta}\right)-g\left(\boldsymbol{\theta}_0\right)\right)
 &gt; \chi_{1,\alpha}^2.
 \end{align}\]</span></p>
-</div>
-<div id="application" class="section level2">
-<h2>Application</h2>
-</div>
-<div id="input-the-data" class="section level2">
-<h2>Input the data</h2>
-</div>
-<div id="mom" class="section level2">
-<h2>MoM</h2>
-<pre><code>## [1] 1</code></pre>
-<pre><code>## [1] 0.9896469</code></pre>
 </div>
 </div>
 <div id="mm-algorithm" class="section level1">
@@ -371,16 +363,18 @@ g\left(\boldsymbol{\theta}|
 updates of <span class="math inline">\(\boldsymbol{\theta}\)</span> are
 given as follows:</p>
 <p><span class="math display">\[\begin{align}
-&amp;\sigma_\beta^{2(t+1)}=\sigma_\beta^{2(t)}\sqrt{\frac{(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega}^{(t)})^{\mathrm{T}}\boldsymbol{\Sigma}^{-(t)}\mathbf{K}\boldsymbol{\Sigma}^{(-t)}(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega}^{(t)})}{\operatorname{tr}\left(\boldsymbol{\Sigma}^{-(t)}\mathbf{K}\right)
+  \begin{split}
+  &amp;\sigma_\beta^{2(t+1)}=\sigma_\beta^{2(t)}\sqrt{\frac{(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega}^{(t)})^{\mathrm{T}}\boldsymbol{\Sigma}^{-(t)}\mathbf{K}\boldsymbol{\Sigma}^{(-t)}(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega}^{(t)})}{\operatorname{tr}\left(\boldsymbol{\Sigma}^{-(t)}\mathbf{K}\right)
 }},\\
 &amp;\sigma_e^{2(t+1)}=\sigma_e^{2(t)}\sqrt{\frac{(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega}^{(t)})^{\mathrm{T}}\boldsymbol{\Sigma}^{-2(t)}(\mathbf{y}-\mathbf{Z}\boldsymbol{\omega}^{(t)})}{\operatorname{tr}\left(\boldsymbol{\Sigma}^{-(t)}\right)
 }}.
+  \end{split}
 \end{align}\]</span></p>
 <p>Since the major computational cost this algorithm is inversion of the
 covariance matrix <span class="math inline">\(\boldsymbol{\Sigma}\)</span> at each iteration.
-Eigenvalue decomposition can be conduct to boost the efficiency.</p>
-<p>Using the fact that <span class="math inline">\(\mathbf{K}\)</span>
-is a real symmetric matrix, we can get <span class="math inline">\(\mathbf{K}=
+<strong>Eigenvalue decomposition</strong> can be conduct to boost the
+efficiency. Using the fact that <span class="math inline">\(\mathbf{K}\)</span> is a real symmetric matrix, we
+can get <span class="math inline">\(\mathbf{K}=
 \mathbf{U}\mathbf{D}\mathbf{U}^{\mathrm{T}}\)</span>. Since <span class="math inline">\(\mathbf{U}\mathbf{U}^{\mathrm{T}}=\mathbf{I}\)</span>,
 the covariance matrix <span class="math inline">\(\boldsymbol{\Sigma}\)</span> is given as:</p>
 <p><span class="math display">\[\begin{align}
@@ -392,11 +386,12 @@ the covariance matrix <span class="math inline">\(\boldsymbol{\Sigma}\)</span> i
 \end{align}\]</span></p>
 <p>Hence, the inversion of the covariance matrix <span class="math inline">\(\boldsymbol{\Sigma}\)</span> is:</p>
 <p><span class="math display">\[\begin{align}
-\boldsymbol{\Sigma}=
+\boldsymbol{\Sigma}^{-1} =
 \mathbf{U}\left(\sigma_\beta^2\mathbf{D}+\sigma_e^2\mathbf{I}\right)^{-1}\mathbf{U}^{\mathrm{T}}.
-\end{align}\]</span></p>
-<div id="the-covariance-matrix-of-boldsymboltheta" class="section level2">
-<h2>The covariance matrix of <span class="math inline">\(\boldsymbol{\theta}\)</span></h2>
+\end{align}\]</span> Algorithm 1 summarizes the simplified MM
+algorithm.</p>
+<div id="the-covariance-matrix-of-hatboldsymboltheta" class="section level2">
+<h2>The covariance matrix of <span class="math inline">\(\hat{\boldsymbol{\theta}}\)</span></h2>
 <p>The covariance matrix of <span class="math inline">\(\hat{\boldsymbol{\theta}}\)</span> can be
 calculated from the inverse of Fisher Information Matrix (FIM). Hence,
 the first step is to obtain FIM, that is</p>
@@ -439,14 +434,6 @@ the FIM is:</p>
 \end{align}\]</span></p>
 <p>Therefore, the covariance matrix of <span class="math inline">\(\hat{\boldsymbol{\theta}}\)</span> is the inverse
 of FIM.</p>
-</div>
-<div id="including-plots" class="section level2">
-<h2>Including Plots</h2>
-<p>You can also embed plots, for example:</p>
-<p><img src="data:image/png;base64,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" width="60%" style="display: block; margin: auto;" /></p>
-<p>Note that the <code>echo = FALSE</code> parameter was added to the
-code chunk to prevent printing of the R code that generated the
-plot.</p>
 </div>
 </div>
     </section>
