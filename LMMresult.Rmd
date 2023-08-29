@@ -121,7 +121,7 @@ print(paste("The pvalue is ",pvalue))
 ```{r cache = TRUE}
 result3 = LMM_MM(y,X,Z,maxiter=500,tol=1e-6,sb2=NULL,se2=NULL,ifintercept=F,ifed=T,ifmargi=T)
 allL = result3$allL
-pdf(file = "./pic/margiplot.pdf",width = 6,height = 4)
+pdf(file = "./pic/margiplot.pdf",width = 10,height = 8)
 plot(x = 1:length(allL),y = allL,xlab="Iters",ylab="The marginal likelihood")
 dev.off()
 ```
